@@ -2,10 +2,11 @@ import type { MetadataRoute } from "next";
 
 import { listPublicStories, listPublicStoryCollections } from "@/lib/data/stories";
 import { listPublicProducts } from "@/lib/data/storefront";
+import { siteUrl } from "@/lib/config/env";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [collections, stories, products] = await Promise.all([listPublicStoryCollections(), listPublicStories(), listPublicProducts()]);
-  const base = "https://treeshya.com";
+  const base = siteUrl;
   return [
     { url: base, lastModified: new Date(), changeFrequency: "weekly", priority: 1 },
     { url: `${base}/discover`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.9 },

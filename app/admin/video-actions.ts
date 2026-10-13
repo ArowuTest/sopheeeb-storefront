@@ -412,7 +412,7 @@ async function discoverCreatorPublicTikTokPosts(handle: string): Promise<TikTokD
     const response = await fetch(`https://www.tiktok.com/@${encodeURIComponent(handle)}`, {
       signal: controller.signal,
       cache: "no-store",
-      headers: { accept: "text/html", "user-agent": "Mozilla/5.0 (compatible; TreeShyaStorefront/1.0)" },
+      headers: { accept: "text/html", "user-agent": "Mozilla/5.0 (compatible; SophieeFindsStorefront/1.0)" },
     });
     if (!response.ok) return { urls: [], status: "unavailable" };
     const urls = extractTikTokPostUrlsFromProfileHtml(await response.text(), handle);

@@ -1,1 +1,8 @@
-export const dynamic="force-dynamic"; export async function GET(){return Response.json({status:"ok",service:"treeshya-storefront"},{headers:{"Cache-Control":"no-store"}})}
+export const dynamic = "force-dynamic";
+
+export async function GET() {
+  return Response.json(
+    { status: "ok", service: "sopheeeb-storefront" },
+    { headers: { "Cache-Control": "no-store" } },
+  );
+}
