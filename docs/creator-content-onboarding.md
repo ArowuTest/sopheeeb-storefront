@@ -6,18 +6,18 @@ The live Railway service needs these values configured before Creator Studio can
 
 | Variable | Purpose |
 | --- | --- |
-| `NEXT_PUBLIC_SITE_URL` | The live site address, `https://treeshya.com` |
-| `NEXT_PUBLIC_SUPABASE_URL` | The dedicated `treeshya-storefront` Supabase project URL |
+| `NEXT_PUBLIC_SITE_URL` | The live site address, currently `https://sopheeeb-storefront-production.up.railway.app` |
+| `NEXT_PUBLIC_SUPABASE_URL` | The dedicated `sopheeeb-storefront` Supabase project URL |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Browser-safe Supabase publishable key |
 | `SUPABASE_SERVICE_ROLE_KEY` | Server-only key used for secure setup and private media operations |
 | `ADMIN_EMAIL` | The one creator email approved to use Studio |
-| `NEXT_PUBLIC_CREATOR_HANDLE` | The public TikTok handle, for example `tr33shya` |
+| `NEXT_PUBLIC_CREATOR_HANDLE` | The public TikTok handle, `sopheeeb` |
 
-In Supabase Auth, add `https://treeshya.com/auth/callback` to the allowed redirect URLs.
+In Supabase Auth, add `<site-url>/auth/callback` to the allowed redirect URLs.
 
 ## First-time setup
 
-Before Creator Studio is set up, the storefront displays a short **initial preview library** based on public @tr33shya posts reviewed during the project. It has no product buttons. During Creator Studio setup, the same eight posts and four categories are automatically added as normal, editable database records. If the profile existed before this change, choose **Add 8 starter videos** from the Creator Studio dashboard instead.
+Before Creator Studio is set up, the storefront displays a short **initial preview library** based on public @sopheeeb posts reviewed during the project. It has no product buttons. During Creator Studio setup, the same starter posts and categories are automatically added as normal, editable database records.
 
 1. Visit `/admin` and request a magic link using the approved `ADMIN_EMAIL` address.
 2. Complete the profile setup: display name, public handle, disclosure and optional contact details.
