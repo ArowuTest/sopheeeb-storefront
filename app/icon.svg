@@ -1,5 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="16" fill="#10110f"/>
-  <circle cx="32" cy="32" r="23" fill="#ec4d55"/>
-  <text x="32" y="38" text-anchor="middle" fill="#10110f" font-family="Georgia,serif" font-size="18" font-weight="700">T$</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Sophiee Finds">
+  <rect width="64" height="64" rx="18" fill="#141925"/>
+  <circle cx="48" cy="16" r="7" fill="#d6a2a3"/>
+  <path d="M20 43c3.8-8.4 6.9-16.5 10.3-24h4.2c3.4 7.5 6.5 15.6 10.3 24h-5.9l-2.1-5.5H27.8L25.7 43H20Zm9.7-10.3h5.8l-2.9-7.9-2.9 7.9Z" fill="#fffaf1"/>
+  <path d="M17 48h30" stroke="#7f9fff" stroke-width="2.5" stroke-linecap="round"/>
 </svg>
