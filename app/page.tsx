@@ -25,22 +25,22 @@ export default async function Home() {
       <section className="sophiee-hero">
         <div className="sophiee-hero__copy">
           <p className="edition-eyebrow">FASHION · HOME · BEAUTY · EVERYDAY</p>
-          <h1>Good finds,<br/><em>beautifully considered.</em></h1>
+          <h1>See the find.<br/><em>Then decide.</em></h1>
           <p className="sophiee-hero__lede">
-            Sophiee&apos;s edit of the pieces, details and practical upgrades
-            that make everyday life feel a little more put together.
+            Sophiee&apos;s real-life edit of fashion, home, beauty and everyday
+            pieces worth a closer look before you add them to your life.
           </p>
           <div className="sophiee-hero__actions">
             <Link className="sophiee-button sophiee-button--primary" href="/discover">
-              Browse the latest finds <ArrowRight size={17}/>
+              Explore the latest finds <ArrowRight size={17}/>
             </Link>
             <Link className="sophiee-button sophiee-button--quiet" href="/search">
               <Search size={16}/> Find something
             </Link>
           </div>
           <p className="sophiee-hero__principle">
-            Watch it in motion. See it in real life. Open the exact TikTok post
-            when you&apos;re ready.
+            Watch it in motion. See the details. Follow the exact TikTok post
+            when you&apos;re ready to shop.
           </p>
         </div>
 
@@ -67,11 +67,11 @@ export default async function Home() {
 
       <section className="sophiee-manifesto">
         <p className="edition-eyebrow">THE SOPHIEE POINT OF VIEW</p>
-        <h2>Not everything that catches your eye deserves a place in your life.</h2>
+        <h2>A better way to shop the scroll.</h2>
         <p>
-          This is the more useful version of the scroll: the original video,
-          a considered edit and a direct path back to TikTok when the product is
-          right for you.
+          Start with the original video, see the details that matter and keep
+          the decision in your hands. When a piece feels right, go straight to
+          the creator&apos;s TikTok post.
         </p>
       </section>
 
@@ -129,7 +129,7 @@ export default async function Home() {
               <p className="edition-eyebrow">NEW TO THE EDIT</p>
               <h2>Worth another<br/><em>look.</em></h2>
             </div>
-            <p>Recent finds across Sophiee&apos;s wardrobe, space, routine and everyday life.</p>
+              <p>Recent finds from Sophiee&apos;s wardrobe, home, routine and everyday life.</p>
           </div>
           <div className="edition-story-row">
             {newest.map((video, index) => <StoryTile key={video.id} video={video} index={index}/>)}
@@ -139,7 +139,7 @@ export default async function Home() {
 
       <section className="sophiee-tiktok-cta">
         <p className="edition-eyebrow">FOLLOW THE FULL STORY</p>
-        <h2>The newest finds always land on TikTok first.</h2>
+        <h2>New finds arrive on TikTok first.</h2>
         <a href="https://www.tiktok.com/@sopheeeb" target="_blank" rel="noreferrer">
           Visit @sopheeeb <ArrowUpRight size={17}/>
         </a>

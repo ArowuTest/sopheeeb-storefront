@@ -37,10 +37,10 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
         <div>
           <Link className="edition-back" href="/"><ArrowLeft size={16} /> Back to home</Link>
           <p className="edition-eyebrow">SOPHIEE FINDS</p>
-          <h1>Finds worth<br /><em>the replay.</em></h1>
-          <p>Watch Sophiee try, style and put her favourite finds to the test. Open the original TikTok for the full story, then shop through TikTok when you&apos;re ready.</p>
+          <h1>The finds<br /><em>worth saving.</em></h1>
+          <p>Watch Sophiee try, style and live with each find in context. When something earns a place in your life, follow the original TikTok post to shop it there.</p>
           <div className="edition-products-hero-actions">
-            <Link className="edition-button edition-button--lime" href="#all-finds">Browse the finds <ArrowUpRight size={16} /></Link>
+            <Link className="edition-button edition-button--lime" href="#all-finds">Explore all finds <ArrowUpRight size={16} /></Link>
             <Link className="edition-text-action" href="/search"><Search size={15} /> Search the edit</Link>
           </div>
         </div>
@@ -59,10 +59,10 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
       </section>
       <section className="edition-find-library edition-products-catalogue" id="all-finds">
         <div className="edition-section-heading">
-          <div><p className="edition-eyebrow">THE FULL VIDEO EDIT</p><h2>See what made<br /><em>the cut.</em></h2></div>
-          <p>{allStories.length ? `Showing ${rangeStart}–${rangeEnd} of ${allStories.length} finds. Watch the original post, then follow its native TikTok Shop path when you're ready.` : "The next find is on its way."}</p>
+          <div><p className="edition-eyebrow">THE FULL VIDEO EDIT</p><h2>Everything worth<br /><em>a closer look.</em></h2></div>
+          <p>{allStories.length ? `Showing ${rangeStart}–${rangeEnd} of ${allStories.length} finds. Watch each one in motion, then follow its TikTok path when you’re ready.` : "The next find is being prepared."}</p>
         </div>
-        {stories.length ? <div className="edition-find-grid">{stories.map((story) => <EditionFindCard key={story.id} story={story} />)}</div> : <div className="edition-products-empty"><p>The next find is on its way.</p><span>New stories will appear here as soon as they are ready to share.</span></div>}
+        {stories.length ? <div className="edition-find-grid">{stories.map((story) => <EditionFindCard key={story.id} story={story} />)}</div> : <div className="edition-products-empty"><p>The next find is being prepared.</p><span>New stories appear here as soon as they are ready to share.</span></div>}
         {totalPages > 1 ? <nav className="edition-pagination" aria-label="Finds pagination">
           {page > 1 ? <Link href={`/products?page=${page - 1}`} rel="prev" aria-label="Previous page"><ArrowLeft size={15} /> Previous</Link> : <span className="edition-pagination-disabled"><ArrowLeft size={15} /> Previous</span>}
           <div className="edition-pagination-pages">{Array.from({ length: totalPages }, (_, index) => index + 1).map((pageNumber) => pageNumber === page
