@@ -1,0 +1,6 @@
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
+import { createCollection } from "../../actions";
+import { requireCreator } from "@/lib/auth/creator";
+
+export default async function NewCollectionPage() { await requireCreator(); return <main className="admin-shell"><Link className="back-link" href="/admin"><ArrowLeft size={18}/>Creator Studio</Link><section className="admin-card admin-card-wide"><p className="eyebrow">NEW COLLECTION</p><h1>Frame a new edit.</h1><form action={createCollection} className="admin-form"><label>Collection title<input name="title" required placeholder="Fitness"/></label><label>URL slug (optional)<input name="slug" placeholder="fitness"/></label><label>Editorial description<textarea name="description" placeholder="Equipment, recovery and movement with a place in your routine."/></label><label>Collection image URL (optional)<input name="imageUrl" type="url" placeholder="https://…"/></label><label>Display order<input name="displayOrder" type="number" min="0" defaultValue="0"/></label><label>Visibility<select name="status"><option value="draft">Draft</option><option value="published">Published</option></select></label><button className="button button-dark" type="submit">Save collection</button></form></section></main>; }

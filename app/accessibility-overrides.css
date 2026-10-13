@@ -1,0 +1,6 @@
+/* Keep the editorial accents vivid without sacrificing readable contrast. */
+.edition-page .edition-button--lime{color:var(--e-ink)}
+.edition-feature-wrap .edition-section-heading h2 em,.edition-selected .edition-section-heading h2 em,.edition-verified-products .edition-section-heading h2 em,.edition-products-library .edition-section-heading h2 em{color:#a6454a}
+.edition-footer .edition-eyebrow{color:#d5d0c7}
+.edition-link-promise{background:#a84248}
+.edition-link-promise .edition-link-number,.edition-link-promise h2 em{color:var(--e-milk)}
