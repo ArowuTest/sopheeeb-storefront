@@ -2,7 +2,7 @@ const publicUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const publicKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
 const configuredSiteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim();
-export const siteUrl = configuredSiteUrl && !/localhost|127\.0\.0\.1/.test(configuredSiteUrl) ? configuredSiteUrl : "https://sopheeeb-storefront.up.railway.app";
+export const siteUrl = configuredSiteUrl && !/localhost|127\.0\.0\.1/.test(configuredSiteUrl) ? configuredSiteUrl : "https://sopheeeb.com";
 
 function normalizeSupabaseUrl(value: string) {
   return value.trim().replace(/\/+$/, "").replace(/\/rest\/v1$/, "");

@@ -10,4 +10,12 @@ describe("public TikTok profile discovery", () => {
       "https://www.tiktok.com/@sopheeeb/video/456",
     ]);
   });
+
+  it("recovers video URLs from TikTok embedded item data", () => {
+    const html = String.raw`{"itemStruct":{"id":"7685745781969554710"},"ItemModule":{"7683923192745905430":{"desc":"A find"}}}`;
+    expect(extractTikTokPostUrlsFromProfileHtml(html)).toEqual([
+      "https://www.tiktok.com/@sopheeeb/video/7685745781969554710",
+      "https://www.tiktok.com/@sopheeeb/video/7683923192745905430",
+    ]);
+  });
 });

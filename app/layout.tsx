@@ -21,11 +21,11 @@ import "./edition-overrides.css";
 import "./accessibility-overrides.css";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://sopheeeb-storefront.up.railway.app"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://sopheeeb.com"),
   applicationName: "Sophiee Finds",
   creator: "Sophiee",
   title: { default: "Sophiee Finds", template: "%s | Sophiee Finds" },
-  description: "Sophiee's considered edit of fashion, home, beauty, movement and everyday finds.",
+  description: "Sophiee's considered edit of fashion, home, beauty, fitness and everyday finds.",
   alternates: { canonical: "/" },
   icons: { icon: "/icon.svg", apple: "/apple-icon.svg" },
   openGraph: {

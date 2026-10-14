@@ -73,12 +73,12 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
       </section>
       {products.length ? <section className="edition-products-library edition-products-library--secondary">
         <div className="edition-section-heading">
-          <div><p className="edition-eyebrow">VERIFIED SHOP LINKS</p><h2>Shop the <em>exact find.</em></h2></div>
-          <p>{products.length} direct TikTok Shop link{products.length === 1 ? "" : "s"}{products.length === 1 ? " is" : " are"} ready when you want to move from story to checkout.</p>
+          <div><p className="edition-eyebrow">SHOP THE EDIT</p><h2>Go straight to<br /><em>the find.</em></h2></div>
+          <p>{products.length} direct TikTok Shop link{products.length === 1 ? "" : "s"} ready for the moment you want to move from watching to shopping.</p>
         </div>
         <div className="edition-product-grid">{products.map((product) => <EditionProductCard key={product.id} product={product} />)}</div>
       </section>
-      : <p className="edition-products-link-note">Exact Shop destinations appear here as they are verified. Every story above still opens the original TikTok post, where the creator&apos;s native Shop button is available.</p>}
+      : <p className="edition-products-link-note">Ready to shop? Choose <strong>Buy on TikTok</strong> on any story above to continue to the original post and its native shopping link.</p>}
       <EditionFooter />
     </main>
   );

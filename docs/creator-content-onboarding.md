@@ -6,14 +6,14 @@ The live Railway service needs these values configured before Creator Studio can
 
 | Variable | Purpose |
 | --- | --- |
-| `NEXT_PUBLIC_SITE_URL` | The live site address, currently `https://sopheeeb-storefront-production.up.railway.app` |
+| `NEXT_PUBLIC_SITE_URL` | The live site address, `https://sopheeeb.com` |
 | `NEXT_PUBLIC_SUPABASE_URL` | The dedicated `sopheeeb-storefront` Supabase project URL |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Browser-safe Supabase publishable key |
 | `SUPABASE_SERVICE_ROLE_KEY` | Server-only key used for secure setup and private media operations |
-| `ADMIN_EMAIL` | The one creator email approved to use Studio |
+| `ADMIN_EMAIL` | The owner email, `etest105@gmail.com`; the owner can add and revoke other admins |
 | `NEXT_PUBLIC_CREATOR_HANDLE` | The public TikTok handle, `sopheeeb` |
 
-In Supabase Auth, add `<site-url>/auth/callback` to the allowed redirect URLs.
+In Supabase Auth, set the Site URL to `https://sopheeeb.com` and allow `https://sopheeeb.com/auth/callback`.
 
 ## First-time setup
 
@@ -30,7 +30,7 @@ Before Creator Studio is set up, the storefront displays a short **initial previ
 
 1. Open **Creator Studio → Manage videos**.
 2. Select the destination collection.
-3. Paste up to **25 full TikTok post URLs**, one URL per line. Use the canonical format: `https://www.tiktok.com/@handle/video/<numeric-id>`.
+3. Paste up to **200 full TikTok post URLs**, one URL per line. Use the canonical format: `https://www.tiktok.com/@handle/video/<numeric-id>`.
 4. Select **Create private video drafts**. Each valid post is fetched through TikTok’s official oEmbed endpoint for a title and thumbnail. Invalid, duplicate or unavailable URLs are reported by their line number.
 5. Open each Draft to improve the title, add a visitor-facing summary, confirm the image description, choose the display order and add an exact product when one is available.
 6. Change the story to **Published** only when it is ready for visitors. Draft and Archived stories never appear in public pages, the sitemap or anonymous reads.

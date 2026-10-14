@@ -65,31 +65,33 @@ export default async function Home() {
         </div>
       </section>
 
-      <section className="sophiee-manifesto">
-        <p className="edition-eyebrow">THE SOPHIEE POINT OF VIEW</p>
-        <h2>Watch in context.<br/><em>Choose with confidence.</em></h2>
-        <p>
-          Every find starts with the original video. See the fit, finish and
-          small details first, then take the exact TikTok path when you are
-          ready.
-        </p>
+      <section className="sophiee-method" aria-labelledby="sophiee-method-title">
+        <div className="sophiee-method__intro">
+          <p className="edition-eyebrow">A CLEARER WAY TO DISCOVER</p>
+          <h2 id="sophiee-method-title">See it clearly.<br/><em>Shop it naturally.</em></h2>
+        </div>
+        <ol className="sophiee-method__steps">
+          <li><span>01</span><div><strong>Watch the real video</strong><p>See the fit, movement, scale and finish in everyday context.</p></div></li>
+          <li><span>02</span><div><strong>Take a closer look</strong><p>Use Sophiee&apos;s edit to find the details that matter to you.</p></div></li>
+          <li><span>03</span><div><strong>Continue on TikTok</strong><p>Open the original post when you are ready to use its native Shop link.</p></div></li>
+        </ol>
       </section>
 
       {categories.length ? (
         <section className="sophiee-collections">
           <div className="sophiee-section-head">
             <div>
-              <p className="edition-eyebrow">SHOP BY MOOD</p>
-              <h2>Start with what<br/><em>you&apos;re looking for.</em></h2>
+              <p className="edition-eyebrow">SHOP BY CATEGORY</p>
+              <h2>Find the edit<br/><em>that fits your day.</em></h2>
             </div>
-            <Link href="/discover">View every video <ArrowUpRight size={16}/></Link>
+            <Link href="/discover">Browse every story <ArrowUpRight size={16}/></Link>
           </div>
           <div className="sophiee-collection-grid">
             {categories.map((category, index) => (
               <Link
                 key={category.id}
                 className={`sophiee-collection-card sophiee-collection-card--${index % 5}`}
-                href={`/collections/${category.slug}`}
+                href={`/collections/${category.slug === "move" ? "fitness" : category.slug}`}
               >
                 {category.coverUrl ? <img src={category.coverUrl} alt=""/> : null}
                 <span className="sophiee-collection-card__number">{String(index + 1).padStart(2, "0")}</span>
