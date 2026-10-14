@@ -236,15 +236,12 @@ export async function inviteAdmin(formData: FormData) {
     redirect("/admin/team?error=email");
   }
 
-  const { createServiceSupabaseClient } = await import("@/lib/supabase/server");
-  let service;
-  try {
-    service = createServiceSupabaseClient();
-  } catch {
-    redirect("/admin/team?error=configuration");
-  }
-
-  const { error } = await service.from("creator_members").upsert(
+  // The owner is already authenticated and migration 0013 grants the owner
+  // an RLS-safe write to this table. Use that session rather than making a
+  // normal team change depend on the optional service-role secret.
+  const { createServerSupabaseClient } = await import("@/lib/supabase/server");
+  const supabase = await createServerSupabaseClient();
+  const { error } = await supabase.from("creator_members").upsert(
     {
       creator_id: context.creatorId,
       email,
@@ -259,7 +256,10 @@ export async function inviteAdmin(formData: FormData) {
   );
 
   // A missing-table error means the owner has not run migration 0013 yet.
-  if (error) redirect(`/admin/team?error=${error.code === "42P01" ? "migration" : "save"}`);
+  if (error) {
+    console.error("creator_admin_invite_failed", { code: error.code, message: error.message });
+    redirect(`/admin/team?error=${error.code === "42P01" ? "migration" : "save"}`);
+  }
   revalidatePath("/admin/team");
   revalidatePath("/admin");
   redirect("/admin/team?saved=invited");
@@ -270,16 +270,19 @@ export async function revokeAdmin(formData: FormData) {
   const memberId = text(formData, "memberId");
   if (!memberId) redirect("/admin/team?error=member");
 
-  const { createServiceSupabaseClient } = await import("@/lib/supabase/server");
-  const service = createServiceSupabaseClient();
-  const { error } = await service
+  const { createServerSupabaseClient } = await import("@/lib/supabase/server");
+  const supabase = await createServerSupabaseClient();
+  const { error } = await supabase
     .from("creator_members")
     .update({ status: "revoked", user_id: null })
     .eq("id", memberId)
     .eq("creator_id", context.creatorId)
     .eq("role", "admin");
 
-  if (error) redirect(`/admin/team?error=${error.code === "42P01" ? "migration" : "save"}`);
+  if (error) {
+    console.error("creator_admin_revoke_failed", { code: error.code, message: error.message });
+    redirect(`/admin/team?error=${error.code === "42P01" ? "migration" : "save"}`);
+  }
   revalidatePath("/admin/team");
   revalidatePath("/admin");
   redirect("/admin/team?saved=revoked");
