@@ -23,9 +23,10 @@ const STORIES_PER_PAGE = 50;
 export default async function CollectionPage({ params, searchParams }: { params: Promise<{ slug: string }>; searchParams: Promise<{ page?: string }> }) {
   const { slug } = await params;
   const query = await searchParams;
-  const [collections, products] = await Promise.all([listPublicStoryCollections(), listPublicProducts({ collectionSlug: slug === "new-in" ? undefined : slug })]);
-  const category = collections.find((item) => item.slug === slug);
-  if (!category && slug !== "new-in") notFound();
+  const dataSlug = slug === "fitness" ? "move" : slug;
+  const [collections, products] = await Promise.all([listPublicStoryCollections(), listPublicProducts({ collectionSlug: dataSlug === "new-in" ? undefined : dataSlug })]);
+  const category = collections.find((item) => item.slug === dataSlug);
+  if (!category && dataSlug !== "new-in") notFound();
   const stories = category ? await listPublicStories({ collectionSlug: category.slug }) : [];
   const requestedPage = Number.parseInt(query.page ?? "1", 10);
   const totalPages = Math.max(1, Math.ceil(stories.length / STORIES_PER_PAGE));
@@ -41,7 +42,7 @@ export default async function CollectionPage({ params, searchParams }: { params:
     beauty: { title: "Beauty, seen in real light.", description: "Routine-led finds and wellness favourites shown on camera, with the texture, finish and everyday context that matter." },
     lifestyle: { title: "The everyday upgrades.", description: "Practical pieces, try-ons and small discoveries that make an ordinary routine feel a little more considered." },
   };
-  const editorialCopy = copyBySlug[slug];
+  const editorialCopy = copyBySlug[slug] ?? copyBySlug[dataSlug];
   const description = editorialCopy?.description ?? category?.description ?? "The original posts and considered links behind Sophiee’s most-requested finds.";
 
   return <main className="edition-page edition-category">

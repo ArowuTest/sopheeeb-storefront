@@ -17,7 +17,7 @@ export function EditionHeader({ collections = [] }: { collections?: EditionNavig
   const navigation = [
     { label: "Stories", href: "/discover", matches: (path: string) => path === "/discover" || path.startsWith("/watch/") },
     { label: "All Finds", href: "/products", matches: (path: string) => path === "/products" || path.startsWith("/products/") },
-    ...collections.slice(0, 4).map((collection) => ({ label: collection.title, href: `/collections/${collection.slug}`, matches: (path: string) => path === `/collections/${collection.slug}` })),
+    ...collections.slice(0, 5).map((collection) => ({ label: collection.title, href: `/collections/${collection.slug === "move" ? "fitness" : collection.slug}`, matches: (path: string) => path === `/collections/${collection.slug}` || (collection.slug === "move" && path === "/collections/fitness") })),
   ];
 
   useEffect(() => {

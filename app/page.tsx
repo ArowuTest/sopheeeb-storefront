@@ -24,7 +24,7 @@ export default async function Home() {
 
       <section className="sophiee-hero">
         <div className="sophiee-hero__copy">
-          <p className="edition-eyebrow">FASHION · HOME · BEAUTY · EVERYDAY</p>
+          <p className="edition-eyebrow">FASHION · HOME · BEAUTY · FITNESS · EVERYDAY</p>
           <h1>See the find.<br/><em>Then decide.</em></h1>
           <p className="sophiee-hero__lede">
             Sophiee&apos;s real-life edit of fashion, home, beauty, fitness and

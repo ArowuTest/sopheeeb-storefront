@@ -26,7 +26,7 @@ export default async function DiscoverPage({ searchParams }: { searchParams: Pro
 
   return <main className="edition-page edition-index">
     <EditionHeaderServer />
-    <section className="edition-index-hero"><div><p className="edition-eyebrow"><span>●</span> SOPHIEE FINDS</p><h1>Watch the story<br/><em>behind the find.</em></h1><p>Fashion, home, beauty and everyday upgrades—shown in motion, in real spaces, with the details that make a find worth saving.</p></div><figure><Image src="/creator-content/sophiee/profile.jpg" alt="Sophiee in a polished blue look" fill priority sizes="(max-width: 768px) 72vw, 25vw"/><figcaption>See it in context.<br/>Then choose your link.</figcaption></figure></section>
+    <section className="edition-index-hero"><div><p className="edition-eyebrow"><span>●</span> SOPHIEE FINDS</p><h1>Watch the story<br/><em>behind the find.</em></h1><p>Fashion, home, beauty, fitness and everyday upgrades—shown in motion, in real spaces, with the details that make a find worth saving.</p></div><figure><Image src="/creator-content/sophiee/profile.jpg" alt="Sophiee in a polished blue look" fill priority sizes="(max-width: 768px) 72vw, 25vw"/><figcaption>See it in context.<br/>Then choose your link.</figcaption></figure></section>
     <section className="edition-index-content">
       <nav className="edition-filter" aria-label="Filter videos by category">
         <Link href="/discover" aria-current={!activeCategory ? "page" : undefined}>All stories</Link>
