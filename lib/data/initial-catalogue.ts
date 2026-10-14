@@ -9,7 +9,7 @@ const categories = [
   { id: "initial-wear", slug: "wear", title: "Wear", description: "Easy pieces, outfits and layers worth seeing in motion before you add them to your wardrobe.", imageUrl: "/creator-content/sophiee/coat.jpg", displayOrder: 1 },
   { id: "initial-home", slug: "home", title: "Home", description: "Small upgrades that make a room feel more considered, useful and yours.", imageUrl: "/creator-content/sophiee/home-decor.jpg", displayOrder: 2 },
   { id: "initial-beauty", slug: "beauty", title: "Beauty", description: "Hair, makeup and finishing touches shown in the routine—not just in a product photo.", imageUrl: "/creator-content/sophiee/wig.jpg", displayOrder: 3 },
-  { id: "initial-move", slug: "move", title: "Move", description: "At-home movement and activewear finds that make it easier to get started.", imageUrl: "/creator-content/sophiee/pilates.jpg", displayOrder: 4 },
+  { id: "initial-move", slug: "move", title: "Fitness", description: "At-home movement and activewear finds that make it easier to get started.", imageUrl: "/creator-content/sophiee/pilates.jpg", displayOrder: 4 },
   { id: "initial-everyday", slug: "everyday", title: "Everyday", description: "Practical little finds that earn their place by making daily life simpler.", imageUrl: "/creator-content/sophiee/led-light.jpg", displayOrder: 5 },
 ] as const;
 

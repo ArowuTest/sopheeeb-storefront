@@ -26,11 +26,11 @@ describe("parseTikTokStoryImport", () => {
     ]);
   });
 
-  it("caps one import at 25 valid story URLs and reports later lines", () => {
-    const urls = Array.from({ length: 26 }, (_, index) => `https://www.tiktok.com/@tr33shya/video/76886971878693${String(index).padStart(4, "0")}`);
+  it("caps one import at 200 valid story URLs and reports later lines", () => {
+    const urls = Array.from({ length: 201 }, (_, index) => `https://www.tiktok.com/@tr33shya/video/76886971878693${String(index).padStart(4, "0")}`);
     const result = parseTikTokStoryImport(urls.join("\n"));
 
-    expect(result.accepted).toHaveLength(25);
-    expect(result.errors).toContainEqual({ line: 26, reason: "An import can contain at most 25 TikTok posts." });
+    expect(result.accepted).toHaveLength(200);
+    expect(result.errors).toContainEqual({ line: 201, reason: "An import can contain at most 200 TikTok posts." });
   });
 });

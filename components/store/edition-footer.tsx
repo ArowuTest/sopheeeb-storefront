@@ -12,7 +12,7 @@ export async function EditionFooter() {
   const socialLinks = configuredLinks.map((link) => ({ platform: labelFor(link.platform), url: link.url }));
   return <footer className="edition-footer">
     <div><p className="edition-eyebrow">SOPHIEE FINDS</p><h2>See it in motion.<br/><em>Choose well.</em></h2></div>
-    <div className="edition-footer-copy"><p>A considered edit of Sophiee&apos;s fashion, home, beauty, movement and everyday finds. Watch the story first, then follow the original TikTok post when you are ready.</p><p className="edition-disclosure">Some links may be affiliate links. Using one may earn Sophiee a commission at no extra cost to you.</p></div>
+    <div className="edition-footer-copy"><p>A considered edit of Sophiee&apos;s fashion, home, beauty, fitness and everyday finds. Watch the story first, then follow the original TikTok post when you are ready.</p><p className="edition-disclosure">Some links may be affiliate links. Using one may earn Sophiee a commission at no extra cost to you.</p></div>
     <div className="edition-socials">{socialLinks.map((link) => <a key={`${link.platform}-${link.url}`} href={link.url} target="_blank" rel="noreferrer">{link.platform}<ArrowUpRight size={14}/></a>)}<Link href="/discover">All videos <ArrowUpRight size={14}/></Link></div>
   </footer>;
 }

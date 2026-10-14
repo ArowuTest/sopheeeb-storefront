@@ -435,10 +435,16 @@ export async function syncCreatorPublicTikTokPosts() {
 
   const existingUrls = new Set((existingStories ?? []).map((story) => story.tiktok_post_url));
   const collectionMap = new Map((collections ?? []).map((collection) => [collection.slug, collection.id]));
+  if (!collectionMap.has("fitness") && collectionMap.has("move")) {
+    collectionMap.set("fitness", collectionMap.get("move")!);
+  }
   const fallbackCollection = collections[0].id;
   const discovery = await discoverCreatorPublicTikTokPosts(context.profile.handle);
   const discoveredUrls = discovery.urls;
-  const allPublicPosts = [...new Set([...discoveredUrls, ...creatorPublicTikTokPosts.filter((url) => url.includes("@sopheeeb"))])];
+  const allPublicPosts = [...new Set([
+    ...discoveredUrls,
+    ...creatorPublicTikTokPosts.filter((url) => url.includes("@sopheeeb")),
+  ])].slice(0, 200);
   const candidates = allPublicPosts.filter((url) => !existingUrls.has(url));
   const metadata = await mapWithConcurrency(candidates, 5, async (url) => ({ url, data: await fetchTikTokOEmbed(url) }));
   let imported = 0;

@@ -17,7 +17,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/products" },
 };
 
-const FINDS_PER_PAGE = 12;
+const FINDS_PER_PAGE = 24;
 
 export default async function ProductsPage({ searchParams }: { searchParams: Promise<{ page?: string }> }) {
   const requestedPage = Number.parseInt((await searchParams).page ?? "1", 10);

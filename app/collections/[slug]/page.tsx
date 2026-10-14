@@ -35,7 +35,8 @@ export default async function CollectionPage({ params, searchParams }: { params:
   const lead = stories[0];
   const title = category?.title ?? "Verified product links";
   const copyBySlug: Record<string, { title: string; description: string }> = {
-    fitness: { title: "Movement, made practical.", description: "At-home equipment, routines and try-ons shown in real spaces—so you can see the setup, the movement and the result before you shop." },
+    fitness: { title: "Fitness, made practical.", description: "At-home equipment, routines and try-ons shown in real spaces—so you can see the setup, the movement and the result before you shop." },
+    move: { title: "Fitness, made practical.", description: "At-home equipment, routines and try-ons shown in real spaces—so you can see the setup, the movement and the result before you shop." },
     fashion: { title: "Looks that earn a second look.", description: "Outfit videos, proportions and styling details captured in motion—not just a product photo on a white background." },
     beauty: { title: "Beauty, seen in real light.", description: "Routine-led finds and wellness favourites shown on camera, with the texture, finish and everyday context that matter." },
     lifestyle: { title: "The everyday upgrades.", description: "Practical pieces, try-ons and small discoveries that make an ordinary routine feel a little more considered." },

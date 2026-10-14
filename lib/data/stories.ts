@@ -72,6 +72,7 @@ const curatedTitleRules: Array<{ pattern: RegExp; title: string }> = [
 
 const collectionSummary: Record<string, string> = {
   move: "A closer look at the movement, setup and details behind this at-home find.",
+  fitness: "A closer look at the movement, setup and details behind this at-home find.",
   wear: "A closer look at the fit, finish and styling that made this piece worth saving.",
   beauty: "A closer look at the beauty find, shown in the routine and in real light.",
   home: "A closer look at the home upgrade and the difference it makes in context.",
@@ -119,6 +120,8 @@ function curateStoryCopy(rawTitle: string, rawSummary: string, collectionSlug: s
 function mapStory(row: Record<string, unknown>): StorefrontStory | null {
   const collection = asRecord(Array.isArray(row.collections) ? row.collections[0] : row.collections);
   if (!collection) return null;
+  const collectionSlug = String(collection.slug);
+  const collectionTitle = collectionSlug === "move" ? "Fitness" : String(collection.title);
 
   const linkedProductRecord = asRecord(Array.isArray(row.linked_product) ? row.linked_product[0] : row.linked_product);
   const offers = linkedProductRecord && Array.isArray(linkedProductRecord.product_offers) ? linkedProductRecord.product_offers : [];
@@ -137,10 +140,10 @@ function mapStory(row: Record<string, unknown>): StorefrontStory | null {
 
   const rawTitle = String(row.title ?? "");
   const rawSummary = String(row.summary ?? "");
-  const curated = curateStoryCopy(rawTitle, rawSummary, String(collection.slug));
+  const curated = curateStoryCopy(rawTitle, rawSummary, collectionSlug);
   const rawAltText = String(row.alt_text ?? "");
   const altText = rawAltText && !rawAltText.toLowerCase().startsWith("imported from the public")
-    ? cleanImportedTitle(rawAltText, String(collection.slug))
+    ? cleanImportedTitle(rawAltText, collectionSlug)
     : curated.title;
 
   return {
@@ -154,7 +157,7 @@ function mapStory(row: Record<string, unknown>): StorefrontStory | null {
     displayOrder: Number(row.display_order ?? 0),
     collection: {
       slug: String(collection.slug),
-      title: String(collection.title),
+      title: collectionTitle,
       imageUrl: typeof collection.image_url === "string" ? collection.image_url : null,
     },
     linkedProduct,
@@ -239,6 +242,10 @@ export async function listPublicStoryCollections(): Promise<StorefrontStoryColle
     const collectionStories = stories.filter((story) => story.collection.slug === collection.slug);
     return {
       ...collection,
+      title: collection.slug === "move" ? "Fitness" : collection.title,
+      description: collection.slug === "move"
+        ? (collection.description || "At-home movement and activewear finds that make it easier to get started.")
+        : collection.description,
       storyCount: collectionStories.length,
       coverUrl: collection.imageUrl ?? collectionStories[0]?.thumbnailUrl ?? null,
     };

@@ -27,8 +27,8 @@ export default async function Home() {
           <p className="edition-eyebrow">FASHION · HOME · BEAUTY · EVERYDAY</p>
           <h1>See the find.<br/><em>Then decide.</em></h1>
           <p className="sophiee-hero__lede">
-            Sophiee&apos;s real-life edit of fashion, home, beauty and everyday
-            pieces worth a closer look before you add them to your life.
+            Sophiee&apos;s real-life edit of fashion, home, beauty, fitness and
+            everyday pieces worth a closer look before you add them to your life.
           </p>
           <div className="sophiee-hero__actions">
             <Link className="sophiee-button sophiee-button--primary" href="/discover">
@@ -67,11 +67,11 @@ export default async function Home() {
 
       <section className="sophiee-manifesto">
         <p className="edition-eyebrow">THE SOPHIEE POINT OF VIEW</p>
-        <h2>A better way to shop the scroll.</h2>
+        <h2>Watch in context.<br/><em>Choose with confidence.</em></h2>
         <p>
-          Start with the original video, see the details that matter and keep
-          the decision in your hands. When a piece feels right, go straight to
-          the creator&apos;s TikTok post.
+          Every find starts with the original video. See the fit, finish and
+          small details first, then take the exact TikTok path when you are
+          ready.
         </p>
       </section>
 

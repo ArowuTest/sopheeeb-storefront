@@ -1,6 +1,6 @@
 import { getTikTokVideoId } from "../tiktok/player";
 
-export const MAX_STORY_IMPORTS = 25;
+export const MAX_STORY_IMPORTS = 200;
 
 export interface StoryImportCandidate {
   line: number;
