@@ -1,7 +1,7 @@
 import "server-only";
 
 import { createInitialCollectionSeeds, createInitialStorySeeds, selectMissingInitialStorySeeds } from "@/lib/data/initial-library-seed";
-import { createServiceSupabaseClient } from "@/lib/supabase/server";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export interface InitialLibraryAdoption {
   collectionsAdded: number;
@@ -15,7 +15,10 @@ export interface InitialLibraryAdoption {
  * story intentionally has no linked product until the creator selects one.
  */
 export async function adoptInitialLibraryForCreator(creatorId: string): Promise<InitialLibraryAdoption> {
-  const supabase = createServiceSupabaseClient();
+  // Starter content belongs to the signed-in creator. Keep this write on the
+  // authenticated path so first-time setup does not depend on a service-role
+  // key being present or correctly configured.
+  const supabase = await createServerSupabaseClient();
   const collectionSeeds = createInitialCollectionSeeds(creatorId);
 
   const { data: existingCollections, error: existingCollectionsError } = await supabase

@@ -26,11 +26,20 @@ export async function bootstrapCreator(formData: FormData) {
   const handle = text(formData, "handle").toLowerCase().replace(/[^a-z0-9_]/g, "");
   const displayName = text(formData, "displayName");
   if (handle.length < 3 || displayName.length < 2) redirect("/admin/setup?error=details");
-  const { createServiceSupabaseClient } = await import("@/lib/supabase/server");
-  let supabase;
-  try { supabase = createServiceSupabaseClient(); } catch { redirect("/admin/setup?error=configuration"); }
-  const { error } = await supabase.from("creator_profiles").insert({ id: context.userId, handle, display_name: displayName, tagline: text(formData, "tagline") || null });
-  if (error) redirect("/admin/setup?error=profile");
+  // This is an owner-scoped write. Use the authenticated session rather than
+  // making first-time setup depend on the optional service-role secret. The
+  // RLS policy allows the signed-in user to create/update the profile whose id
+  // is their own auth subject, and using that policy keeps setup safe even if
+  // the privileged integration is temporarily unavailable.
+  const { createServerSupabaseClient } = await import("@/lib/supabase/server");
+  const supabase = await createServerSupabaseClient();
+  const { error } = await supabase.from("creator_profiles").upsert({
+    id: context.userId,
+    handle,
+    display_name: displayName,
+    tagline: text(formData, "tagline") || null,
+  }, { onConflict: "id" });
+  if (error) redirect(`/admin/setup?error=${error.code === "23505" ? "handle" : "profile"}`);
   try {
     await supabase.from("creator_members").upsert({
       creator_id: context.userId,
