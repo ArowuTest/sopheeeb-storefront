@@ -6,7 +6,8 @@ type SearchParams = { error?: string; sent?: string; signout?: string };
 function noticeFor(params: SearchParams) {
   if (params.sent === "1") return "Check your inbox for a secure sign-in link. It expires after a short time.";
   if (params.signout === "1") return "You have been signed out of Creator Studio.";
-  if (params.error === "send") return "We could not send that link just now. Check the email address and try again.";
+  if (params.error === "provider") return "Supabase has temporarily reached its email sending limit. Please wait and try again later, or configure a custom SMTP provider for reliable delivery.";
+  if (params.error === "send") return "Supabase could not send the email just now. This is usually a temporary email-provider limit; wait a little while and try again.";
   if (params.error === "callback") return "That sign-in link is no longer valid. Request a fresh one.";
   if (params.error === "authorised") return "That email is not on the approved owner or admin list.";
   if (params.error === "rate") return "Too many sign-in requests. Please wait a few minutes, then try again.";

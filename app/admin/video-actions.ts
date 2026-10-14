@@ -405,6 +405,18 @@ type TikTokDiscoveryResult = {
   status: "found" | "empty" | "unavailable";
 };
 
+function tiktokPostTimestamp(url: string): number {
+  const videoId = getTikTokVideoId(url);
+  if (!videoId) return 0;
+  try {
+    // TikTok video IDs contain the creation timestamp in their high bits.
+    // This is only used for deterministic ordering; no date is shown to users.
+    return Number(BigInt(videoId) >> BigInt(32));
+  } catch {
+    return 0;
+  }
+}
+
 async function discoverCreatorPublicTikTokPosts(handle: string): Promise<TikTokDiscoveryResult> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 10000);
@@ -444,7 +456,9 @@ export async function syncCreatorPublicTikTokPosts() {
   const allPublicPosts = [...new Set([
     ...discoveredUrls,
     ...creatorPublicTikTokPosts.filter((url) => url.includes("@sopheeeb")),
-  ])].slice(0, 200);
+  ])]
+    .sort((left, right) => tiktokPostTimestamp(right) - tiktokPostTimestamp(left))
+    .slice(0, 200);
   const candidates = allPublicPosts.filter((url) => !existingUrls.has(url));
   const metadata = await mapWithConcurrency(candidates, 5, async (url) => ({ url, data: await fetchTikTokOEmbed(url) }));
   let imported = 0;

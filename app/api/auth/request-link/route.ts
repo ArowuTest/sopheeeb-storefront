@@ -60,5 +60,6 @@ export async function POST(request: Request) {
     email,
     options: { shouldCreateUser: true, emailRedirectTo: `${siteUrl}/auth/callback?next=/admin` },
   });
-  return NextResponse.redirect(new URL(error ? "/admin/login?error=send" : "/admin/login?sent=1", siteUrl));
+  const providerLimited = Boolean(error && (error.status === 429 || error.code === "over_email_send_rate_limit"));
+  return NextResponse.redirect(new URL(error ? `/admin/login?error=${providerLimited ? "provider" : "send"}` : "/admin/login?sent=1", siteUrl));
 }
