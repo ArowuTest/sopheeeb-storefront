@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180" role="img" aria-label="Sophiee Finds">
+  <rect width="180" height="180" rx="48" fill="#4b1f35"/>
+  <circle cx="140" cy="42" r="17" fill="#d9f65a"/>
+  <text x="90" y="122" text-anchor="middle" font-family="Georgia, Times New Roman, serif" font-size="105" font-weight="700" fill="#fffaf1">S</text>
+  <path d="M51 143h78" stroke="#e8b2b0" stroke-width="7" stroke-linecap="round"/>
+</svg>
