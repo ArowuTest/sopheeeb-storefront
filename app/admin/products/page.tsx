@@ -119,8 +119,9 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
 
         {filteredProducts.length ? (
           <>
-          <form id="bulk-products-form" action={bulkUpdateProducts}></form>
-          <BulkDraftToolbar formId="bulk-products-form" group="products" draftCount={filteredDraftCount} itemLabel="product drafts"/>
+          <form id="bulk-products-form" action={bulkUpdateProducts}>
+            <BulkDraftToolbar formId="bulk-products-form" group="products" draftCount={filteredDraftCount} itemLabel="product drafts"/>
+          </form>
           <div className="product-manager-list">
             {filteredProducts.map((product) => {
               const collection = product.collections;

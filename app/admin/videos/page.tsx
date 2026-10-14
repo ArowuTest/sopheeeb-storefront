@@ -75,8 +75,9 @@ export default async function VideosPage({ searchParams }: { searchParams: Promi
           {query || status !== "all" ? <Link className="filter-reset" href="/admin/videos">Reset</Link> : null}
         </form>
         {filteredStories.length ? <>
-          <form id="bulk-stories-form" action={bulkUpdateStories} />
-          <BulkDraftToolbar formId="bulk-stories-form" group="stories" draftCount={draftCount} itemLabel="video drafts" />
+          <form id="bulk-stories-form" action={bulkUpdateStories}>
+            <BulkDraftToolbar formId="bulk-stories-form" group="stories" draftCount={draftCount} itemLabel="video drafts" />
+          </form>
           <div className="story-manager-list">{filteredStories.map((story) => {
             const collection = story.collections as unknown as { title?: string } | null;
             const product = story.linked_product as unknown as { title?: string } | null;

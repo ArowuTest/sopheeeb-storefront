@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useFormStatus } from "react-dom";
 
 type BulkDraftToolbarProps = {
   formId: string;
@@ -11,7 +12,7 @@ type BulkDraftToolbarProps = {
 
 export function BulkDraftToolbar({ formId, group, draftCount, itemLabel }: BulkDraftToolbarProps) {
   const [selectedCount, setSelectedCount] = useState(0);
-  const [submitting, setSubmitting] = useState(false);
+  const { pending } = useFormStatus();
   const selector = `input[data-bulk-group="${group}"]`;
 
   useEffect(() => {
@@ -42,17 +43,15 @@ export function BulkDraftToolbar({ formId, group, draftCount, itemLabel }: BulkD
         {selectedCount ? `${selectedCount} selected` : "Select drafts to manage together"}
       </span>
       <div className="bulk-draft-actions">
-        <button className="button button-dark" type="submit" name="action" value="publish" form={formId} disabled={!selectedCount || submitting} onClick={(event) => {
+        <button className="button button-dark" type="submit" name="action" value="publish" form={formId} disabled={!selectedCount || pending} onClick={(event) => {
           if (!window.confirm(`Publish ${selectedCount} ${itemLabel}? They will become visible on the public storefront.`)) event.preventDefault();
-          else setSubmitting(true);
         }}>
-          {submitting ? "Saving…" : "Publish selected"}
+          {pending ? "Saving…" : "Publish selected"}
         </button>
-        <button className="button button-outline bulk-archive-button" type="submit" name="action" value="archive" form={formId} disabled={!selectedCount || submitting} onClick={(event) => {
+        <button className="button button-outline bulk-archive-button" type="submit" name="action" value="archive" form={formId} disabled={!selectedCount || pending} onClick={(event) => {
           if (!window.confirm(`Archive ${selectedCount} ${itemLabel}? They will be removed from the public storefront.`)) event.preventDefault();
-          else setSubmitting(true);
         }}>
-          {submitting ? "Saving…" : "Archive selected"}
+          {pending ? "Saving…" : "Archive selected"}
         </button>
       </div>
     </div>
