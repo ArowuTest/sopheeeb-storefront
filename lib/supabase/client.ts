@@ -6,5 +6,10 @@ import { getSupabasePublicConfig } from "../config/env";
 
 export function createClient() {
   const { url, key } = getSupabasePublicConfig();
-  return createBrowserClient(url, key, { auth: { flowType: "pkce" } });
+  return createBrowserClient(url, key, {
+    auth: {
+      detectSessionInUrl: true,
+      flowType: "implicit",
+    },
+  });
 }

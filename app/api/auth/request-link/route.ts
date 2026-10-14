@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { createServiceSupabaseClient, createServerSupabaseClient } from "@/lib/supabase/server";
-import { getAdminEmail, hasSupabaseConfig, siteUrl } from "@/lib/config/env";
+import { createClient } from "@supabase/supabase-js";
+import { createServiceSupabaseClient } from "@/lib/supabase/server";
+import { getAdminEmail, getSupabasePublicConfig, hasSupabaseConfig, siteUrl } from "@/lib/config/env";
 
 const requestWindows = new Map<string, { startedAt: number; count: number }>();
 const WINDOW_MS = 10 * 60 * 1000;
@@ -46,11 +47,15 @@ export async function POST(request: Request) {
     }
   }
   if (!allowed) return NextResponse.redirect(new URL("/admin/login?error=authorised", siteUrl));
-  // Use the SSR client here so Supabase uses its PKCE flow and stores the
-  // verifier in the response cookie. A server-created browser client defaults
-  // to the implicit flow, which leaves access tokens in the URL hash and
-  // cannot establish the server session for the first admin page render.
-  const supabase = await createServerSupabaseClient();
+  const { url, key } = getSupabasePublicConfig();
+  const supabase = createClient(url, key, {
+    auth: {
+      autoRefreshToken: false,
+      detectSessionInUrl: false,
+      flowType: "implicit",
+      persistSession: false,
+    },
+  });
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: { shouldCreateUser: true, emailRedirectTo: `${siteUrl}/auth/callback?next=/admin` },
