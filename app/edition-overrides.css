@@ -121,11 +121,11 @@
 .edition-index-hero>div>p:not(.edition-eyebrow),.edition-category-hero>div>p:not(.edition-eyebrow),.edition-products-hero>div:first-child>p:not(.edition-eyebrow){font-size:18px}
 .edition-story-copy p{font-size:12px;font-weight:600}
 .edition-story-copy h3{font-size:25px}
-.edition-story-actions{font-size:11px}
+.edition-story-actions{font-size:12px}
 .edition-filter a{font-size:12px}
 .edition-find-card-summary{font-size:14px}
-.edition-find-card-actions{font-size:11px}
-.edition-product-card p{font-size:11px}
+.edition-find-card-actions{font-size:12px}
+.edition-product-card p{font-size:12px}
 .edition-product-card>div>span{font-size:14px;line-height:1.6}
 .edition-product-link{font-size:12px}
 .edition-category-card span,.sophiee-collection-card__copy p{font-size:14px}
@@ -133,7 +133,7 @@
 .edition-button--lime,.sophiee-button--primary{background:#b8c8ff;color:#0c1222!important;font-size:12px;font-weight:700;box-shadow:0 8px 24px rgba(0,0,0,.18)}
 .sophiee-hero{min-height:calc(100vh - 88px);padding-block:clamp(60px,7vw,108px)}
 .sophiee-hero__lede{font-size:18px}
-.edition-pagination{font-size:11px}
+.edition-pagination{font-size:12px}
 @media(max-width:760px){
   .edition-header{height:68px}
   .edition-mobile-menu{top:67px}
