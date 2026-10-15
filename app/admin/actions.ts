@@ -246,7 +246,7 @@ export async function deleteSocialLink(formData: FormData) {
   revalidatePath("/"); revalidatePath("/admin/settings"); redirect("/admin/settings?saved=1");
 }
 
-export async function inviteAdmin(formData: FormData) {
+export async function addAdminEmail(formData: FormData) {
   const context = await requireOwner();
   const email = normalizeEmail(text(formData, "email"));
   if (!email || !email.includes("@") || email === context.email) {
@@ -286,18 +286,18 @@ export async function inviteAdmin(formData: FormData) {
         if (!existing.error && existing.data) ({ error } = await service.from("creator_members").update(payload).eq("id", existing.data.id));
       }
     } catch (serviceError) {
-      console.error("creator_admin_invite_service_unavailable", { message: serviceError instanceof Error ? serviceError.message : "unknown" });
+      console.error("creator_admin_access_service_unavailable", { message: serviceError instanceof Error ? serviceError.message : "unknown" });
     }
   }
 
   // A missing-table error means the owner has not run migration 0013 yet.
   if (error) {
-    console.error("creator_admin_invite_failed", { code: error.code, message: error.message });
+    console.error("creator_admin_access_save_failed", { code: error.code, message: error.message });
     redirect(`/admin/team?error=${error.code === "42P01" ? "migration" : "save"}`);
   }
   revalidatePath("/admin/team");
   revalidatePath("/admin");
-  redirect("/admin/team?saved=invited");
+  redirect("/admin/team?saved=added");
 }
 
 export async function revokeAdmin(formData: FormData) {

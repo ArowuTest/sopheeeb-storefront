@@ -26,9 +26,9 @@ export function isApprovedCreatorEmail(email: string | null | undefined): boolea
 
 /**
  * The callback route runs before the normal Creator Studio context exists, so
- * it needs a small allow-list check of its own. Keep invited admins in the
- * same server-side authorization path as the dashboard: bootstrap owner email
- * plus pending/active membership records.
+ * it needs a small allow-list check of its own. Keep added admins in the same
+ * server-side authorization path as the dashboard: bootstrap owner email plus
+ * pending/active membership records.
  */
 export async function isAllowedCreatorEmail(email: string | null | undefined): Promise<boolean> {
   const normalizedEmail = email?.trim().toLowerCase();
@@ -79,11 +79,11 @@ export async function getCreatorContext(): Promise<CreatorContext> {
     };
   }
 
-  // Pending invitations are claimed on the first magic-link login. A pending
-  // row is intentionally not visible to the authenticated RLS policy until it
-  // has a user_id, so use the server-only client as a narrowly-scoped fallback
-  // for this email claim. This keeps invited-admin login functional without
-  // exposing the membership table to arbitrary callers.
+  // Added admin access is claimed on the first magic-link login. A pending row
+  // is intentionally not visible to the authenticated RLS policy until it has
+  // a user_id, so use the server-only client as a narrowly-scoped fallback for
+  // this email claim. This keeps admin login functional without exposing the
+  // membership table to arbitrary callers.
   let { data: membership, error: membershipError } = await supabase
     .from("creator_members")
     .select("id, creator_id, role, status, email")
@@ -119,7 +119,7 @@ export async function getCreatorContext(): Promise<CreatorContext> {
           .eq("status", "pending");
         if (claim.error) return { state: "forbidden" };
       } catch {
-        // If the service key is unavailable, the invitation remains pending
+        // If the service key is unavailable, the admin access remains pending
         // and can be claimed on the next login after configuration is fixed.
         return { state: "forbidden" };
       }
