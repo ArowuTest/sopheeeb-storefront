@@ -24,7 +24,13 @@ export async function POST(request: Request) {
   const path = `${context.userId}/${productId}/${crypto.randomUUID()}-${safeName(file.name)}`;
   const { error: uploadError } = await supabase.storage.from("creator-media").upload(path, file, { contentType: file.type, cacheControl: "31536000", upsert: false });
   if (uploadError) return NextResponse.redirect(new URL(`/admin/products/${productId}?error=upload`, origin));
-  if (isCover) await supabase.from("product_media").update({ is_cover: false }).eq("product_id", productId);
+  if (isCover) {
+    const { error: coverError } = await supabase.from("product_media").update({ is_cover: false }).eq("product_id", productId);
+    if (coverError) {
+      await supabase.storage.from("creator-media").remove([path]);
+      return NextResponse.redirect(new URL(`/admin/products/${productId}?error=media`, origin));
+    }
+  }
   const { data: count } = await supabase.from("product_media").select("id", { count: "exact", head: true }).eq("product_id", productId);
   const { error: mediaError } = await supabase.from("product_media").insert({ product_id: productId, media_type: file.type.startsWith("video/") ? "video" : "image", url: path, storage_path: path, alt_text: altText, display_order: count ?? 0, is_cover: isCover });
   if (mediaError) await supabase.storage.from("creator-media").remove([path]);

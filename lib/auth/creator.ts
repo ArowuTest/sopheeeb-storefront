@@ -79,27 +79,49 @@ export async function getCreatorContext(): Promise<CreatorContext> {
     };
   }
 
-  // Pending invitations are claimed on the first magic-link login. This query
-  // intentionally degrades cleanly before migration 0013 is applied.
-  const { data: membership, error: membershipError } = await supabase
+  // Pending invitations are claimed on the first magic-link login. A pending
+  // row is intentionally not visible to the authenticated RLS policy until it
+  // has a user_id, so use the server-only client as a narrowly-scoped fallback
+  // for this email claim. This keeps invited-admin login functional without
+  // exposing the membership table to arbitrary callers.
+  let { data: membership, error: membershipError } = await supabase
     .from("creator_members")
     .select("id, creator_id, role, status, email")
     .eq("email", email)
     .in("status", ["pending", "active"])
     .maybeSingle();
 
+  if (!membership && !membershipError) {
+    try {
+      const { createServiceSupabaseClient } = await import("@/lib/supabase/server");
+      const service = createServiceSupabaseClient();
+      const result = await service
+        .from("creator_members")
+        .select("id, creator_id, role, status, email")
+        .eq("email", email)
+        .in("status", ["pending", "active"])
+        .maybeSingle();
+      membership = result.data;
+      membershipError = result.error;
+    } catch {
+      // Missing membership migration/service key: fail closed below.
+    }
+  }
+
   if (!membershipError && membership) {
     if (membership.status === "pending") {
       try {
         const { createServiceSupabaseClient } = await import("@/lib/supabase/server");
-        await createServiceSupabaseClient()
+        const claim = await createServiceSupabaseClient()
           .from("creator_members")
           .update({ user_id: subject, status: "active", accepted_at: new Date().toISOString() })
           .eq("id", membership.id)
           .eq("status", "pending");
+        if (claim.error) return { state: "forbidden" };
       } catch {
         // If the service key is unavailable, the invitation remains pending
         // and can be claimed on the next login after configuration is fixed.
+        return { state: "forbidden" };
       }
     }
 

@@ -26,13 +26,16 @@ export async function bootstrapCreator(formData: FormData) {
   const handle = text(formData, "handle").toLowerCase().replace(/[^a-z0-9_]/g, "");
   const displayName = text(formData, "displayName");
   if (handle.length < 3 || displayName.length < 2) redirect("/admin/setup?error=details");
-  // This is an owner-scoped write. Use the authenticated session rather than
-  // making first-time setup depend on the optional service-role secret. The
-  // RLS policy allows the signed-in user to create/update the profile whose id
-  // is their own auth subject, and using that policy keeps setup safe even if
-  // the privileged integration is temporarily unavailable.
-  const { createServerSupabaseClient } = await import("@/lib/supabase/server");
-  const supabase = await createServerSupabaseClient();
+  // Profile creation is deliberately service-mediated: the base schema keeps
+  // profile inserts closed, and this action is only reachable after the
+  // verified bootstrap email check above.
+  let supabase;
+  try {
+    const { createServiceSupabaseClient } = await import("@/lib/supabase/server");
+    supabase = createServiceSupabaseClient();
+  } catch {
+    redirect("/admin/setup?error=configuration");
+  }
   const { error } = await supabase.from("creator_profiles").upsert({
     id: context.userId,
     handle,
@@ -122,18 +125,21 @@ export async function updateProduct(formData: FormData) {
     const { data: collection } = await supabase.from("collections").select("id").eq("id", input.collectionId).eq("creator_id", context.profile.id).maybeSingle();
     if (!collection) redirect(`/admin/products/${id}?error=collection`);
   }
-  const { error } = await supabase.from("products").update({ collection_id: input.collectionId, title: input.title, slug: input.slug, creator_note: input.creatorNote || null, tags: parseTags(input.tags), status: input.status, published_at: input.status === "published" ? new Date().toISOString() : null }).eq("id", id).eq("creator_id", context.profile.id);
-  if (error) redirect(`/admin/products/${id}?error=save`);
+  const { data: updatedProduct, error } = await supabase.from("products").update({ collection_id: input.collectionId, title: input.title, slug: input.slug, creator_note: input.creatorNote || null, tags: parseTags(input.tags), status: input.status, published_at: input.status === "published" ? new Date().toISOString() : null }).eq("id", id).eq("creator_id", context.profile.id).select("id").maybeSingle();
+  if (error || !updatedProduct) redirect(`/admin/products/${id}?error=save`);
   const { data: offer } = await supabase.from("product_offers").select("id").eq("product_id", id).eq("is_primary", true).maybeSingle();
-  if (offer) await supabase.from("product_offers").update({ destination_url: input.affiliateUrl, is_active: true }).eq("id", offer.id);
-  else await supabase.from("product_offers").insert({ product_id: id, platform: "tiktok_shop", destination_url: input.affiliateUrl, is_primary: true, is_active: true });
+  const offerResult = offer
+    ? await supabase.from("product_offers").update({ destination_url: input.affiliateUrl, is_active: true }).eq("id", offer.id)
+    : await supabase.from("product_offers").insert({ product_id: id, platform: "tiktok_shop", destination_url: input.affiliateUrl, is_primary: true, is_active: true });
+  if (offerResult.error) redirect(`/admin/products/${id}?error=offer`);
   revalidatePath("/"); revalidatePath(`/products/${input.slug}`); revalidatePath("/admin"); redirect(`/admin/products/${id}?saved=1`);
 }
 
 export async function archiveProduct(formData: FormData) {
   const context = await requireCreator(); const id = text(formData, "id");
   const { createServerSupabaseClient } = await import("@/lib/supabase/server"); const supabase = await createServerSupabaseClient();
-  await supabase.from("products").update({ status: "archived" }).eq("id", id).eq("creator_id", context.profile.id);
+  const { data, error } = await supabase.from("products").update({ status: "archived", published_at: null, updated_at: new Date().toISOString() }).eq("id", id).eq("creator_id", context.profile.id).select("id").maybeSingle();
+  if (error || !data) redirect("/admin/products?error=archive");
   revalidatePath("/"); revalidatePath("/admin"); redirect("/admin");
 }
 
@@ -170,14 +176,22 @@ export async function addMedia(formData: FormData) {
   if (!productId || !/^https:\/\//.test(url)) redirect(`/admin/products/${productId}?error=media`);
   const { createServerSupabaseClient } = await import("@/lib/supabase/server"); const supabase = await createServerSupabaseClient();
   const { data: count } = await supabase.from("product_media").select("id", { count: "exact", head: true }).eq("product_id", productId);
-  if (isCover) await supabase.from("product_media").update({ is_cover: false }).eq("product_id", productId);
-  await supabase.from("product_media").insert({ product_id: productId, media_type: text(formData, "mediaType") === "video" ? "video" : "image", url, alt_text: text(formData, "altText"), display_order: count ?? 0, is_cover: isCover });
+  if (isCover) {
+    const { error } = await supabase.from("product_media").update({ is_cover: false }).eq("product_id", productId);
+    if (error) redirect(`/admin/products/${productId}?error=media`);
+  }
+  const { error } = await supabase.from("product_media").insert({ product_id: productId, media_type: text(formData, "mediaType") === "video" ? "video" : "image", url, alt_text: text(formData, "altText"), display_order: count ?? 0, is_cover: isCover });
+  if (error) redirect(`/admin/products/${productId}?error=media`);
   revalidatePath("/"); redirect(`/admin/products/${productId}?saved=1`);
 }
 
 export async function saveProfile(formData: FormData) {
-  const context = await requireCreator(); const { createServerSupabaseClient } = await import("@/lib/supabase/server"); const supabase = await createServerSupabaseClient();
-  await supabase.from("creator_profiles").update({ display_name: text(formData, "displayName"), tagline: text(formData, "tagline") || null, affiliate_disclosure: text(formData, "disclosure") || "Some links may be affiliate links.", contact_email: text(formData, "contactEmail") || null, contact_visible: checked(formData, "contactVisible") }).eq("id", context.profile.id);
+  const context = await requireOwner();
+  const contactEmail = text(formData, "contactEmail");
+  if (contactEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail)) redirect("/admin/settings?error=profile");
+  const { createServerSupabaseClient } = await import("@/lib/supabase/server"); const supabase = await createServerSupabaseClient();
+  const { error } = await supabase.from("creator_profiles").update({ display_name: text(formData, "displayName"), tagline: text(formData, "tagline") || null, affiliate_disclosure: text(formData, "disclosure") || "Some links may be affiliate links.", contact_email: contactEmail || null, contact_visible: checked(formData, "contactVisible"), updated_at: new Date().toISOString() }).eq("id", context.profile.id);
+  if (error) redirect("/admin/settings?error=profile");
   revalidatePath("/"); revalidatePath("/admin/settings"); redirect("/admin/settings?saved=1");
 }
 
@@ -185,7 +199,8 @@ export async function addSocialLink(formData: FormData) {
   const context = await requireCreator(); const raw = { platform: text(formData, "platform"), url: text(formData, "url"), label: text(formData, "label"), isVisible: checked(formData, "isVisible"), displayOrder: Number(text(formData, "displayOrder") || 0) };
   const result = socialLinkSchema.safeParse(raw); if (!result.success) redirect("/admin/settings?error=social");
   const { createServerSupabaseClient } = await import("@/lib/supabase/server"); const supabase = await createServerSupabaseClient();
-  await supabase.from("social_links").insert({ creator_id: context.profile.id, platform: result.data.platform, url: result.data.platform === "email" ? `mailto:${result.data.url.replace(/^mailto:/i, "")}` : result.data.url, label: result.data.label || null, is_visible: result.data.isVisible, display_order: result.data.displayOrder });
+  const { error } = await supabase.from("social_links").insert({ creator_id: context.profile.id, platform: result.data.platform, url: result.data.platform === "email" ? `mailto:${result.data.url.replace(/^mailto:/i, "")}` : result.data.url, label: result.data.label || null, is_visible: result.data.isVisible, display_order: result.data.displayOrder });
+  if (error) redirect("/admin/settings?error=social");
   revalidatePath("/"); revalidatePath("/admin/settings"); redirect("/admin/settings?saved=1");
 }
 
@@ -195,15 +210,16 @@ export async function updateCollection(formData: FormData) {
   if (!id || title.length < 2 || !slug) redirect(`/admin/collections/${id}?error=details`);
   const status = text(formData, "status"); if (!["draft", "published", "archived"].includes(status)) redirect(`/admin/collections/${id}?error=status`);
   const { createServerSupabaseClient } = await import("@/lib/supabase/server"); const supabase = await createServerSupabaseClient();
-  const { error } = await supabase.from("collections").update({ title, slug, description: text(formData, "description") || null, image_url: text(formData, "imageUrl") || null, display_order: Number(text(formData, "displayOrder") || 0), status }).eq("id", id).eq("creator_id", context.profile.id);
-  if (error) redirect(`/admin/collections/${id}?error=save`);
+  const { data: updatedCollection, error } = await supabase.from("collections").update({ title, slug, description: text(formData, "description") || null, image_url: text(formData, "imageUrl") || null, display_order: Number(text(formData, "displayOrder") || 0), status, updated_at: new Date().toISOString() }).eq("id", id).eq("creator_id", context.profile.id).select("id").maybeSingle();
+  if (error || !updatedCollection) redirect(`/admin/collections/${id}?error=save`);
   revalidatePath("/"); revalidatePath("/admin/collections"); redirect(`/admin/collections/${id}?saved=1`);
 }
 
 export async function archiveCollection(formData: FormData) {
   const context = await requireCreator(); const id = text(formData, "id");
   const { createServerSupabaseClient } = await import("@/lib/supabase/server"); const supabase = await createServerSupabaseClient();
-  await supabase.from("collections").update({ status: "archived" }).eq("id", id).eq("creator_id", context.profile.id);
+  const { data, error } = await supabase.from("collections").update({ status: "archived", updated_at: new Date().toISOString() }).eq("id", id).eq("creator_id", context.profile.id).select("id").maybeSingle();
+  if (error || !data) redirect("/admin/collections?error=archive");
   revalidatePath("/"); revalidatePath("/admin/collections"); redirect("/admin/collections");
 }
 
@@ -217,15 +233,16 @@ export async function updateSocialLink(formData: FormData) {
   const context = await requireCreator(); const id = text(formData, "id"); const result = socialPayload(formData);
   if (!id || !result.success) redirect("/admin/settings?error=social");
   const { createServerSupabaseClient } = await import("@/lib/supabase/server"); const supabase = await createServerSupabaseClient();
-  const { error } = await supabase.from("social_links").update({ platform: result.data.platform, url: socialUrl(result.data), label: result.data.label || null, is_visible: result.data.isVisible, display_order: result.data.displayOrder }).eq("id", id).eq("creator_id", context.profile.id);
-  if (error) redirect("/admin/settings?error=social");
+  const { data: updatedLink, error } = await supabase.from("social_links").update({ platform: result.data.platform, url: socialUrl(result.data), label: result.data.label || null, is_visible: result.data.isVisible, display_order: result.data.displayOrder }).eq("id", id).eq("creator_id", context.profile.id).select("id").maybeSingle();
+  if (error || !updatedLink) redirect("/admin/settings?error=social");
   revalidatePath("/"); revalidatePath("/admin/settings"); redirect("/admin/settings?saved=1");
 }
 
 export async function deleteSocialLink(formData: FormData) {
   const context = await requireCreator(); const id = text(formData, "id");
   const { createServerSupabaseClient } = await import("@/lib/supabase/server"); const supabase = await createServerSupabaseClient();
-  await supabase.from("social_links").delete().eq("id", id).eq("creator_id", context.profile.id);
+  const { data, error } = await supabase.from("social_links").delete().eq("id", id).eq("creator_id", context.profile.id).select("id").maybeSingle();
+  if (error || !data) redirect("/admin/settings?error=social");
   revalidatePath("/"); revalidatePath("/admin/settings"); redirect("/admin/settings?saved=1");
 }
 

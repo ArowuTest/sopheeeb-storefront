@@ -20,7 +20,10 @@ export async function createImportBatch(formData: FormData) {
   if (error || !batch) redirect("/admin/import?error=save");
   const rows = parsed.rows.map((row) => ({ batch_id: batch.id, row_number: row.index, affiliate_url: row.affiliateUrl || null, tiktok_post_url: row.tiktokPostUrl || null, title: row.title || null, collection_name: row.collection || null, errors: row.errors, is_selected: row.status === "ready" }));
   const { error: rowsError } = await supabase.from("import_rows").insert(rows);
-  if (rowsError) redirect("/admin/import?error=rows");
+  if (rowsError) {
+    await supabase.from("import_batches").delete().eq("id", batch.id).eq("creator_id", context.profile.id);
+    redirect("/admin/import?error=rows");
+  }
   redirect(`/admin/import?batch=${batch.id}`);
 }
 
@@ -31,6 +34,8 @@ export async function importSelectedRows(formData: FormData) {
   if (!batchId || !selectedIds.length) redirect(`/admin/import?batch=${batchId}&error=selection`);
   const { createServerSupabaseClient } = await import("@/lib/supabase/server");
   const supabase = await createServerSupabaseClient();
+  const { data: batch } = await supabase.from("import_batches").select("id").eq("id", batchId).eq("creator_id", context.profile.id).maybeSingle();
+  if (!batch) redirect(`/admin/import?batch=${batchId}&error=rows`);
   const { data: rows } = await supabase.from("import_rows").select("id,title,affiliate_url,tiktok_post_url,collection_name,errors,imported_product_id").eq("batch_id", batchId).in("id", selectedIds).is("imported_product_id", null);
   const { data: collections } = await supabase.from("collections").select("id,title").eq("creator_id", context.profile.id);
   const collectionMap = new Map((collections ?? []).map((collection) => [collection.title.toLowerCase(), collection.id]));
@@ -39,8 +44,8 @@ export async function importSelectedRows(formData: FormData) {
     const affiliate = validateAffiliateUrl(row.affiliate_url ?? "");
     if (errors.length || !row.title || !affiliate.ok) continue;
     const slug = `${makeSlug(row.title)}-${row.id.slice(0, 6)}`;
-    const { data: product } = await supabase.from("products").insert({ creator_id: context.profile.id, title: row.title, slug, collection_id: row.collection_name ? collectionMap.get(row.collection_name.toLowerCase()) ?? null : null, status: "draft" }).select("id").single();
-    if (!product) continue;
+    const { data: product, error: productError } = await supabase.from("products").insert({ creator_id: context.profile.id, title: row.title, slug, collection_id: row.collection_name ? collectionMap.get(row.collection_name.toLowerCase()) ?? null : null, status: "draft" }).select("id").single();
+    if (productError || !product) continue;
     const { error: offerError } = await supabase.from("product_offers").insert({ product_id: product.id, platform: "tiktok_shop", destination_url: affiliate.value, is_primary: true, is_active: true });
     if (offerError) { await supabase.from("products").delete().eq("id", product.id); continue; }
     if (row.tiktok_post_url) {
@@ -57,7 +62,10 @@ export async function importSelectedRows(formData: FormData) {
         });
       }
     }
-    await supabase.from("import_rows").update({ imported_product_id: product.id, processed_at: new Date().toISOString() }).eq("id", row.id);
+    const { error: processedError } = await supabase.from("import_rows").update({ imported_product_id: product.id, processed_at: new Date().toISOString() }).eq("id", row.id).eq("batch_id", batchId);
+    if (processedError) {
+      await supabase.from("products").delete().eq("id", product.id).eq("creator_id", context.profile.id);
+    }
   }
   revalidatePath("/admin");
   revalidatePath("/admin/products");
@@ -66,12 +74,15 @@ export async function importSelectedRows(formData: FormData) {
 
 
 export async function updateImportRow(formData: FormData) {
-  await requireCreator(); const id = String(formData.get("id") ?? ""); const batchId = String(formData.get("batchId") ?? "");
+  const context = await requireCreator(); const id = String(formData.get("id") ?? ""); const batchId = String(formData.get("batchId") ?? "");
   const affiliateUrl = String(formData.get("affiliateUrl") ?? "").trim(); const tiktokPostUrl = String(formData.get("tiktokPostUrl") ?? "").trim(); const title = String(formData.get("title") ?? "").trim(); const collection = String(formData.get("collection") ?? "").trim();
   const errors: string[] = []; const affiliate = validateAffiliateUrl(affiliateUrl); if (!affiliate.ok) errors.push(affiliate.error);
   const post = (await import("@/lib/validation/affiliate-url")).validateTikTokPostUrl(tiktokPostUrl); if (!post.ok) errors.push(post.error);
   if (!title) errors.push("A product title is required before publishing.");
   const { createServerSupabaseClient } = await import("@/lib/supabase/server"); const supabase = await createServerSupabaseClient();
-  await supabase.from("import_rows").update({ affiliate_url: affiliateUrl || null, tiktok_post_url: tiktokPostUrl || null, title: title || null, collection_name: collection || null, errors, is_selected: errors.length === 0 }).eq("id", id).eq("batch_id", batchId);
+  const { data: batch } = await supabase.from("import_batches").select("id").eq("id", batchId).eq("creator_id", context.profile.id).maybeSingle();
+  if (!batch) redirect(`/admin/import?batch=${batchId}&error=rows`);
+  const { data: updatedRow, error } = await supabase.from("import_rows").update({ affiliate_url: affiliateUrl || null, tiktok_post_url: tiktokPostUrl || null, title: title || null, collection_name: collection || null, errors, is_selected: errors.length === 0 }).eq("id", id).eq("batch_id", batchId).select("id").maybeSingle();
+  if (error || !updatedRow) redirect(`/admin/import?batch=${batchId}&error=rows`);
   redirect(`/admin/import?batch=${batchId}`);
 }

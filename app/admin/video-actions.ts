@@ -226,7 +226,7 @@ export async function updateStory(formData: FormData) {
     .maybeSingle();
   if (!existing) storyError("/admin/videos", "story");
 
-  const { error } = await supabase.from("creator_videos").update({
+  const { data: updatedStory, error } = await supabase.from("creator_videos").update({
     collection_id: prepared.input.collectionId,
     linked_product_id: prepared.input.linkedProductId,
     slug: prepared.input.slug,
@@ -239,8 +239,8 @@ export async function updateStory(formData: FormData) {
     display_order: prepared.input.displayOrder,
     published_at: prepared.input.status === "published" ? existing.published_at ?? new Date().toISOString() : null,
     updated_at: new Date().toISOString(),
-  }).eq("id", id).eq("creator_id", context.profile.id);
-  if (error) {
+  }).eq("id", id).eq("creator_id", context.profile.id).select("id").maybeSingle();
+  if (error || !updatedStory) {
     if (prepared.createdProductId) await supabase.from("products").delete().eq("id", prepared.createdProductId).eq("creator_id", context.profile.id);
     storyError(`/admin/videos/${id}`, "save");
   }
@@ -283,12 +283,14 @@ export async function updateStoryOrder(formData: FormData) {
   const rawOrder = Number.parseInt(text(formData, "displayOrder") || "0", 10);
   if (!id || !Number.isFinite(rawOrder) || rawOrder < 0 || rawOrder > 100000) storyError("/admin/videos", "order");
   const supabase = await createServerSupabaseClient();
-  const { error } = await supabase
+  const { data: updatedStory, error } = await supabase
     .from("creator_videos")
     .update({ display_order: rawOrder, updated_at: new Date().toISOString() })
     .eq("id", id)
-    .eq("creator_id", context.profile.id);
-  if (error) storyError("/admin/videos", "order");
+    .eq("creator_id", context.profile.id)
+    .select("id")
+    .maybeSingle();
+  if (error || !updatedStory) storyError("/admin/videos", "order");
   revalidatePath("/admin/videos");
   revalidatePath("/discover");
   revalidatePath("/products");

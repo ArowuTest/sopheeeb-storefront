@@ -14,6 +14,6 @@ export async function POST(request: Request) {
   const { data: product } = await supabase.from("products").select("id").eq("id", productId).eq("creator_id", context.profile.id).maybeSingle();
   if (!product) return NextResponse.redirect(new URL("/admin", origin));
   const { data: count } = await supabase.from("product_media").select("id", { count: "exact", head: true }).eq("product_id", productId);
-  await supabase.from("product_media").insert({ product_id: productId, media_type: "tiktok_embed", url: oembed.thumbnailUrl, alt_text: oembed.title, tiktok_post_url: postUrl, display_order: count ?? 0, is_cover: false });
-  return NextResponse.redirect(new URL(`/admin/products/${productId}?saved=1`, origin));
+  const { error } = await supabase.from("product_media").insert({ product_id: productId, media_type: "tiktok_embed", url: oembed.thumbnailUrl, alt_text: oembed.title, tiktok_post_url: postUrl, display_order: count ?? 0, is_cover: false });
+  return NextResponse.redirect(new URL(`/admin/products/${productId}${error ? "?error=media" : "?saved=1"}`, origin));
 }

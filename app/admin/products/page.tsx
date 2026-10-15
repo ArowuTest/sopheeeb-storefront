@@ -106,7 +106,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
         {query || status !== "all" ? <Link className="filter-reset" href="/admin/products">Reset</Link> : null}
       </form>
 
-      {(bulkNotice || params.error === "bulk") ? <div className={`admin-notice${params.error ? " admin-notice--error" : ""}`} role="status">{bulkNotice ? <p>{bulkNotice}</p> : null}{params.error === "bulk" ? <p>Select at least one draft before choosing a bulk action.</p> : null}</div> : null}
+      {(bulkNotice || params.error) ? <div className={`admin-notice${params.error ? " admin-notice--error" : ""}`} role="status">{bulkNotice ? <p>{bulkNotice}</p> : null}{params.error === "bulk" ? <p>Select at least one draft before choosing a bulk action.</p> : null}{params.error === "archive" ? <p>That find could not be archived. It may already have been removed.</p> : null}</div> : null}
 
       <section className="product-manager" aria-labelledby="product-list-title">
         <div className="section-heading">
