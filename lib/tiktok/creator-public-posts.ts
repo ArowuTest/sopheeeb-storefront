@@ -136,10 +136,38 @@ export function extractTikTokPostUrlsFromProfileHtml(html: string, handle = "sop
     /"itemStruct"\s*:\s*\{\s*"id"\s*:\s*"(\d{12,24})"/g,
     /"itemInfo"\s*:\s*\{\s*"itemStruct"\s*:\s*\{\s*"id"\s*:\s*"(\d{12,24})"/g,
     /"ItemModule"\s*:\s*\{\s*"(\d{12,24})"\s*:/g,
+    /"id"\s*:\s*"(\d{12,24})"\s*,\s*"desc"\s*:/g,
+    /"id"\s*:\s*"(\d{12,24})"\s*,\s*"video"\s*:/g,
   ];
   for (const idPattern of videoIdPatterns) {
     for (const match of normalized.matchAll(idPattern)) {
       urls.add(`https://www.tiktok.com/@${handle}/video/${match[1]}`);
+    }
+  }
+
+  // TikTok periodically moves the profile payload between different
+  // hydration scopes. Walk only the JSON script payloads and recover video
+  // IDs wherever an item-like object appears, without depending on one
+  // private endpoint or a browser-only request signature.
+  const scriptPattern = /<script[^>]+type=["']application\/json["'][^>]*>([\s\S]*?)<\/script>/gi;
+  for (const script of normalized.matchAll(scriptPattern)) {
+    try {
+      const payload: unknown = JSON.parse(script[1]);
+      const visit = (value: unknown, key = "") => {
+        if (!value || typeof value !== "object") return;
+        if (Array.isArray(value)) {
+          for (const item of value) visit(item, key);
+          return;
+        }
+        const record = value as Record<string, unknown>;
+        if (typeof record.id === "string" && /^\d{12,24}$/.test(record.id) && /item|video|post|list|story/i.test(key)) {
+          urls.add(`https://www.tiktok.com/@${handle}/video/${record.id}`);
+        }
+        for (const [childKey, child] of Object.entries(record)) visit(child, childKey);
+      };
+      visit(payload);
+    } catch {
+      // Some TikTok payloads are escaped fragments rather than standalone JSON.
     }
   }
   return [...urls];

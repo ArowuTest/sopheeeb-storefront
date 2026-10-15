@@ -420,22 +420,46 @@ function tiktokPostTimestamp(url: string): number {
 }
 
 async function discoverCreatorPublicTikTokPosts(handle: string): Promise<TikTokDiscoveryResult> {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 10000);
-  try {
-    const response = await fetch(`https://www.tiktok.com/@${encodeURIComponent(handle)}`, {
-      signal: controller.signal,
-      cache: "no-store",
-      headers: { accept: "text/html", "user-agent": "Mozilla/5.0 (compatible; SophieeFindsStorefront/1.0)" },
-    });
-    if (!response.ok) return { urls: [], status: "unavailable" };
-    const urls = extractTikTokPostUrlsFromProfileHtml(await response.text(), handle);
-    return { urls, status: urls.length ? "found" : "empty" };
-  } catch {
-    return { urls: [], status: "unavailable" };
-  } finally {
-    clearTimeout(timeout);
+  const variants = [
+    `https://www.tiktok.com/@${encodeURIComponent(handle)}`,
+    `https://www.tiktok.com/@${encodeURIComponent(handle)}?lang=en`,
+    `https://www.tiktok.com/@${encodeURIComponent(handle)}?is_copy_url=1&is_from_webapp=v1`,
+  ];
+  const urls = new Set<string>();
+  let sawSuccessfulResponse = false;
+  for (const profileUrl of variants) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
+    try {
+      const response = await fetch(profileUrl, {
+        signal: controller.signal,
+        cache: "no-store",
+        headers: {
+          accept: "text/html,application/xhtml+xml",
+          "accept-language": "en-US,en;q=0.9",
+          "user-agent": "Mozilla/5.0 (compatible; SophieeFindsStorefront/1.0)",
+        },
+      });
+      if (!response.ok) continue;
+      sawSuccessfulResponse = true;
+      for (const url of extractTikTokPostUrlsFromProfileHtml(await response.text(), handle)) urls.add(url);
+      if (urls.size >= 200) break;
+    } catch {
+      // Try the next public profile representation; TikTok can vary by region.
+    } finally {
+      clearTimeout(timeout);
+    }
   }
+  return { urls: [...urls].slice(0, 200), status: urls.size ? "found" : sawSuccessfulResponse ? "empty" : "unavailable" };
+}
+
+async function fetchTikTokOEmbedWithRetry(url: string) {
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const metadata = await fetchTikTokOEmbed(url);
+    if (metadata) return metadata;
+    if (attempt < 2) await new Promise((resolve) => setTimeout(resolve, 500 * (attempt + 1)));
+  }
+  return null;
 }
 
 export async function syncCreatorPublicTikTokPosts() {
@@ -462,7 +486,7 @@ export async function syncCreatorPublicTikTokPosts() {
     .sort((left, right) => tiktokPostTimestamp(right) - tiktokPostTimestamp(left))
     .slice(0, 200);
   const candidates = allPublicPosts.filter((url) => !existingUrls.has(url));
-  const metadata = await mapWithConcurrency(candidates, 5, async (url) => ({ url, data: await fetchTikTokOEmbed(url) }));
+  const metadata = await mapWithConcurrency(candidates, 3, async (url) => ({ url, data: await fetchTikTokOEmbedWithRetry(url) }));
   let imported = 0;
   let failed = 0;
 

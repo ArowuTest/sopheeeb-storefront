@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowLeft, ExternalLink, PackageOpen, Plus, Search, SquarePen } from "lucide-react";
 
 import { BulkDraftToolbar } from "@/components/admin/bulk-draft-toolbar";
+import { AdminPagination } from "@/components/admin/admin-pagination";
 import { bulkUpdateProducts } from "../actions";
 import { requireCreator } from "@/lib/auth/creator";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -9,6 +10,7 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 type SearchParams = {
   q?: string;
   status?: string;
+  page?: string;
   error?: string;
   bulk?: string;
   count?: string;
@@ -30,28 +32,40 @@ function statusIsValid(value: string | undefined): value is ProductRecord["statu
   return value === "draft" || value === "published" || value === "archived";
 }
 
+const PRODUCTS_PER_PAGE = 25;
+
+function escapeSearchTerm(value: string) {
+  return value.replace(/[\\%,]/g, (character) => `\\${character}`).replace(/\s+/g, " ").trim();
+}
+
 export default async function ProductsPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const context = await requireCreator();
   const params = await searchParams;
   const query = params.q?.trim() ?? "";
   const status = statusIsValid(params.status) ? params.status : "all";
+  const requestedPage = Math.max(1, Number.parseInt(params.page ?? "1", 10) || 1);
   const supabase = await createServerSupabaseClient();
-  const { data } = await supabase
+  const search = escapeSearchTerm(query);
+  let productsQuery = supabase
     .from("products")
-    .select("id,title,slug,status,creator_note,created_at,collections(title),product_offers(destination_url,is_active),product_media(id,is_cover)")
-    .eq("creator_id", context.profile.id)
-    .order("created_at", { ascending: false });
+    .select("id,title,slug,status,creator_note,created_at,collections(title),product_offers(destination_url,is_active),product_media(id,is_cover)", { count: "exact" })
+    .eq("creator_id", context.profile.id);
+  if (status !== "all") productsQuery = productsQuery.eq("status", status);
+  if (query) productsQuery = productsQuery.or(`title.ilike.%${search}%,slug.ilike.%${search}%,creator_note.ilike.%${search}%`);
+  const [{ data, count: matchingCount }, { count: allCount }, { count: publishedCount }, { count: draftCount }, { count: linkedCount }] = await Promise.all([
+    productsQuery.order("created_at", { ascending: false }).range((requestedPage - 1) * PRODUCTS_PER_PAGE, requestedPage * PRODUCTS_PER_PAGE - 1),
+    supabase.from("products").select("id", { count: "exact", head: true }).eq("creator_id", context.profile.id),
+    supabase.from("products").select("id", { count: "exact", head: true }).eq("creator_id", context.profile.id).eq("status", "published"),
+    supabase.from("products").select("id", { count: "exact", head: true }).eq("creator_id", context.profile.id).eq("status", "draft"),
+    supabase.from("products").select("id,product_offers!inner(id)", { count: "exact", head: true }).eq("creator_id", context.profile.id).eq("product_offers.is_active", true),
+  ]);
 
   const products = (data ?? []) as ProductRecord[];
-  const filteredProducts = products.filter((product) => {
-    const matchesStatus = status === "all" || product.status === status;
-    const haystack = `${product.title} ${product.slug} ${product.creator_note ?? ""}`.toLowerCase();
-    return matchesStatus && (!query || haystack.includes(query.toLowerCase()));
-  });
-  const publishedCount = products.filter((product) => product.status === "published").length;
-  const draftCount = products.filter((product) => product.status === "draft").length;
-  const linkedCount = products.filter((product) => product.product_offers?.some((offer) => offer.is_active)).length;
-  const filteredDraftCount = filteredProducts.filter((product) => product.status === "draft").length;
+  const matchingProducts = matchingCount ?? 0;
+  const totalPages = Math.max(1, Math.ceil(matchingProducts / PRODUCTS_PER_PAGE));
+  const page = Math.min(requestedPage, totalPages);
+  const totalProducts = allCount ?? 0;
+  const filteredDraftCount = products.filter((product) => product.status === "draft").length;
   const bulkCount = Number.parseInt(params.count ?? "0", 10) || 0;
   const bulkNotice = params.bulk === "publish"
     ? `${bulkCount} product draft${bulkCount === 1 ? "" : "s"} published.`
@@ -79,10 +93,10 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
       </header>
 
       <section className="product-metrics" aria-label="Product catalogue summary">
-        <div><span>All finds</span><strong>{products.length}</strong></div>
-        <div><span>Published</span><strong>{publishedCount}</strong></div>
-        <div><span>Drafts</span><strong>{draftCount}</strong></div>
-        <div><span>With Shop link</span><strong>{linkedCount}</strong></div>
+        <div><span>All finds</span><strong>{totalProducts}</strong></div>
+        <div><span>Published</span><strong>{publishedCount ?? 0}</strong></div>
+        <div><span>Drafts</span><strong>{draftCount ?? 0}</strong></div>
+        <div><span>With Shop link</span><strong>{linkedCount ?? 0}</strong></div>
       </section>
 
       <form className="product-filters" method="get">
@@ -114,16 +128,16 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
             <p className="eyebrow">YOUR FINDS</p>
             <h2 id="product-list-title">Link it once.<br /><em>Keep it current.</em></h2>
           </div>
-          <p>{filteredProducts.length === products.length ? `${products.length} catalogue item${products.length === 1 ? "" : "s"}.` : `${filteredProducts.length} matching item${filteredProducts.length === 1 ? "" : "s"} of ${products.length}.`}</p>
+          <p>{query || status !== "all" ? `${matchingProducts} matching item${matchingProducts === 1 ? "" : "s"} of ${totalProducts}.` : `${totalProducts} catalogue item${totalProducts === 1 ? "" : "s"}.`}</p>
         </div>
 
-        {filteredProducts.length ? (
+        {products.length ? (
           <>
           <form id="bulk-products-form" action={bulkUpdateProducts}>
             <BulkDraftToolbar formId="bulk-products-form" group="products" draftCount={filteredDraftCount} itemLabel="product drafts"/>
           </form>
           <div className="product-manager-list">
-            {filteredProducts.map((product) => {
+            {products.map((product) => {
               const collection = product.collections;
               const offer = product.product_offers?.find((candidate) => candidate.is_active) ?? product.product_offers?.[0];
               const mediaCount = product.product_media?.length ?? 0;
@@ -143,14 +157,15 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
               );
             })}
           </div>
+          <AdminPagination page={page} totalPages={totalPages} basePath="/admin/products" query={{ q: query || undefined, status: status === "all" ? undefined : status }} label="Product catalogue pagination" />
           </>
         ) : (
           <div className="admin-card admin-card-wide product-empty-state">
             <PackageOpen size={24} />
-            <p className="eyebrow">{products.length ? "NO MATCHES" : "NO FINDS YET"}</p>
-            <h2>{products.length ? "Try a different filter." : "Start with the exact item."}</h2>
-            <p>{products.length ? "Clear the search or publishing filter to see the rest of the catalogue." : "Add the TikTok Shop URL, then give visitors the note and visual context that make the find useful."}</p>
-            {products.length ? <Link className="text-link" href="/admin/products">Show all finds <ExternalLink size={15} /></Link> : <Link className="button button-dark" href="/admin/products/new"><Plus size={17} />Add the first find</Link>}
+            <p className="eyebrow">{totalProducts ? "NO MATCHES" : "NO FINDS YET"}</p>
+            <h2>{totalProducts ? "Try a different filter." : "Start with the exact item."}</h2>
+            <p>{totalProducts ? "Clear the search or publishing filter to see the rest of the catalogue." : "Add the TikTok Shop URL, then give visitors the note and visual context that make the find useful."}</p>
+            {totalProducts ? <Link className="text-link" href="/admin/products">Show all finds <ExternalLink size={15} /></Link> : <Link className="button button-dark" href="/admin/products/new"><Plus size={17} />Add the first find</Link>}
           </div>
         )}
       </section>

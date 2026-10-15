@@ -18,4 +18,13 @@ describe("public TikTok profile discovery", () => {
       "https://www.tiktok.com/@sopheeeb/video/7683923192745905430",
     ]);
   });
+
+  it("recovers IDs from a hydration payload when TikTok changes its JSON scope", () => {
+    const html = `<script type="application/json">${JSON.stringify({
+      "webapp.user-detail": { itemList: [{ id: "7696997335771268621", desc: "A new find" }] },
+    })}</script>`;
+    expect(extractTikTokPostUrlsFromProfileHtml(html)).toEqual([
+      "https://www.tiktok.com/@sopheeeb/video/7696997335771268621",
+    ]);
+  });
 });

@@ -2,27 +2,45 @@ import Link from "next/link";
 import { ArrowLeft, Clapperboard, Plus, Save, Search, SquarePen } from "lucide-react";
 
 import { BulkDraftToolbar } from "@/components/admin/bulk-draft-toolbar";
+import { AdminPagination } from "@/components/admin/admin-pagination";
 import { StoryImportForm } from "@/components/admin/story-import-form";
 import { SyncPublicPostsButton } from "@/components/admin/sync-public-posts-button";
 import { bulkUpdateStories, syncCreatorPublicTikTokPosts, updateStoryOrder } from "../video-actions";
 import { requireCreator } from "@/lib/auth/creator";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
-export default async function VideosPage({ searchParams }: { searchParams: Promise<{ imported?: string; failed?: string; error?: string; starter?: string; publicSync?: string; syncTotal?: string; discovered?: string; discovery?: string; q?: string; status?: string; saved?: string; bulk?: string; count?: string }> }) {
+const VIDEOS_PER_PAGE = 25;
+
+function escapeSearchTerm(value: string) {
+  return value.replace(/[\\%,]/g, (character) => `\\${character}`).replace(/\s+/g, " ").trim();
+}
+
+export default async function VideosPage({ searchParams }: { searchParams: Promise<{ imported?: string; failed?: string; error?: string; starter?: string; publicSync?: string; syncTotal?: string; discovered?: string; discovery?: string; q?: string; status?: string; page?: string; saved?: string; bulk?: string; count?: string }> }) {
   const context = await requireCreator();
   const params = await searchParams;
   const supabase = await createServerSupabaseClient();
-  const [{ data: stories }, { data: collections }] = await Promise.all([
-    supabase.from("creator_videos").select("id,title,slug,status,summary,display_order,tiktok_post_url,collections(title),linked_product:products(title)").eq("creator_id", context.profile.id).order("display_order").order("created_at", { ascending: false }),
+  const query = params.q?.trim() ?? "";
+  const status = ["draft", "published", "archived"].includes(params.status ?? "") ? params.status! : "all";
+  const requestedPage = Math.max(1, Number.parseInt(params.page ?? "1", 10) || 1);
+  let storiesQuery = supabase
+    .from("creator_videos")
+    .select("id,title,slug,status,summary,display_order,tiktok_post_url,collections(title),linked_product:products(title)", { count: "exact" })
+    .eq("creator_id", context.profile.id);
+  if (status !== "all") storiesQuery = storiesQuery.eq("status", status);
+  if (query) {
+    const escaped = escapeSearchTerm(query);
+    const clauses = ["title", "slug", "summary", "tiktok_post_url"].map((column) => `${column}.ilike.%${escaped}%`);
+    if (/^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(query)) clauses.push(`id.eq.${query}`);
+    storiesQuery = storiesQuery.or(clauses.join(","));
+  }
+  const [{ data: stories, count: storyCount }, { data: collections }] = await Promise.all([
+    storiesQuery.order("display_order").order("created_at", { ascending: false }).range((requestedPage - 1) * VIDEOS_PER_PAGE, requestedPage * VIDEOS_PER_PAGE - 1),
     supabase.from("collections").select("id,title,status").eq("creator_id", context.profile.id).neq("status", "archived").order("display_order"),
   ]);
-  const query = params.q?.trim().toLowerCase() ?? "";
-  const status = ["draft", "published", "archived"].includes(params.status ?? "") ? params.status : "all";
-  const filteredStories = (stories ?? []).filter((story) => {
-    const collection = story.collections as unknown as { title?: string } | null;
-    const haystack = `${story.title} ${story.slug} ${story.summary ?? ""} ${story.tiktok_post_url} ${collection?.title ?? ""}`.toLowerCase();
-    return (status === "all" || story.status === status) && (!query || haystack.includes(query));
-  });
+  const filteredStories = stories ?? [];
+  const totalStories = storyCount ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalStories / VIDEOS_PER_PAGE));
+  const page = Math.min(requestedPage, totalPages);
   const imported = Number(params.imported ?? 0);
   const failedLines = params.failed?.split(",").filter(Boolean) ?? [];
   const bulkCount = Number.parseInt(params.count ?? "0", 10) || 0;
@@ -83,7 +101,8 @@ export default async function VideosPage({ searchParams }: { searchParams: Promi
             const product = story.linked_product as unknown as { title?: string } | null;
             return <div key={story.id} className="story-manager-row"><span className="bulk-checkbox-slot">{story.status === "draft" ? <input form="bulk-stories-form" data-bulk-group="stories" type="checkbox" name="storyId" value={story.id} aria-label={`Select ${story.title}`} /> : null}</span><span className={`status-pill status-pill--${story.status}`}>{story.status}</span><Link href={`/admin/videos/${story.id}`} className="story-manager-copy"><strong>{story.title}</strong><small>{collection?.title ?? "No collection"} · {story.tiktok_post_url} · {product?.title ? `Linked to ${product.title}` : "No product link"}</small></Link><div className="story-row-actions"><Link href={`/admin/videos/${story.id}`} className="story-row-edit" aria-label={`Edit ${story.title}`}><SquarePen size={15} /> Edit</Link><form action={updateStoryOrder} className="story-order-form"><input type="hidden" name="id" value={story.id} /><label><span>Order</span><input name="displayOrder" type="number" min="0" max="100000" defaultValue={story.display_order} /></label><button className="story-row-action" type="submit">Save order <Save size={15} /></button></form></div></div>;
           })}</div>
-        </> : <div className="admin-card admin-card-wide"><Clapperboard size={23} /><p className="eyebrow">{stories?.length ? "NO MATCHES" : "NO VIDEO STORIES YET"}</p><h2>{stories?.length ? "Try a different search." : "Start with a post people already ask about."}</h2><p>{stories?.length ? "Search across titles, captions, URLs, IDs and collection names." : "Add a single video, or create private drafts in batches. Nothing appears on the storefront until you publish it."}</p></div>}
+          <AdminPagination page={page} totalPages={totalPages} basePath="/admin/videos" query={{ q: query || undefined, status: status === "all" ? undefined : status }} label="Video library pagination" />
+        </> : <div className="admin-card admin-card-wide"><Clapperboard size={23} /><p className="eyebrow">{totalStories ? "NO MATCHES" : "NO VIDEO STORIES YET"}</p><h2>{totalStories ? "Try a different search." : "Start with a post people already ask about."}</h2><p>{totalStories ? "Search across titles, captions, TikTok URLs or exact video IDs." : "Add a single video, or create private drafts in batches. Nothing appears on the storefront until you publish it."}</p></div>}
       </section>
       <section className="admin-card admin-card-wide story-sync-card">
         <p className="eyebrow">PUBLIC PAGE SYNC</p><h2>Sync the public profile and configured library.</h2>
