@@ -236,24 +236,42 @@ export async function inviteAdmin(formData: FormData) {
     redirect("/admin/team?error=email");
   }
 
-  // The owner is already authenticated and migration 0013 grants the owner
-  // an RLS-safe write to this table. Use that session rather than making a
-  // normal team change depend on the optional service-role secret.
+  const payload = {
+    creator_id: context.creatorId,
+    email,
+    role: "admin" as const,
+    status: "pending" as const,
+    invited_by: context.userId,
+    invited_at: new Date().toISOString(),
+    user_id: null,
+    accepted_at: null,
+  };
+
+  // Prefer the authenticated owner session. On projects where the membership
+  // table was created without an authenticated table grant, fall back to the
+  // server-only service client after the owner has already been authorized.
   const { createServerSupabaseClient } = await import("@/lib/supabase/server");
   const supabase = await createServerSupabaseClient();
-  const { error } = await supabase.from("creator_members").upsert(
-    {
-      creator_id: context.creatorId,
-      email,
-      role: "admin",
-      status: "pending",
-      invited_by: context.userId,
-      invited_at: new Date().toISOString(),
-      user_id: null,
-      accepted_at: null,
-    },
-    { onConflict: "creator_id,email" },
-  );
+  let { error } = await supabase.from("creator_members").insert(payload);
+  if (error?.code === "23505") {
+    const existing = await supabase.from("creator_members").select("id").eq("creator_id", context.creatorId).eq("email", email).maybeSingle();
+    if (!existing.error && existing.data) {
+      ({ error } = await supabase.from("creator_members").update(payload).eq("id", existing.data.id));
+    }
+  }
+  if (error) {
+    try {
+      const { createServiceSupabaseClient } = await import("@/lib/supabase/server");
+      const service = createServiceSupabaseClient();
+      ({ error } = await service.from("creator_members").insert(payload));
+      if (error?.code === "23505") {
+        const existing = await service.from("creator_members").select("id").eq("creator_id", context.creatorId).eq("email", email).maybeSingle();
+        if (!existing.error && existing.data) ({ error } = await service.from("creator_members").update(payload).eq("id", existing.data.id));
+      }
+    } catch (serviceError) {
+      console.error("creator_admin_invite_service_unavailable", { message: serviceError instanceof Error ? serviceError.message : "unknown" });
+    }
+  }
 
   // A missing-table error means the owner has not run migration 0013 yet.
   if (error) {
@@ -272,13 +290,27 @@ export async function revokeAdmin(formData: FormData) {
 
   const { createServerSupabaseClient } = await import("@/lib/supabase/server");
   const supabase = await createServerSupabaseClient();
-  const { error } = await supabase
+  let { error } = await supabase
     .from("creator_members")
     .update({ status: "revoked", user_id: null })
     .eq("id", memberId)
     .eq("creator_id", context.creatorId)
     .eq("role", "admin");
 
+  if (error) {
+    try {
+      const { createServiceSupabaseClient } = await import("@/lib/supabase/server");
+      const service = createServiceSupabaseClient();
+      ({ error } = await service
+        .from("creator_members")
+        .update({ status: "revoked", user_id: null })
+        .eq("id", memberId)
+        .eq("creator_id", context.creatorId)
+        .eq("role", "admin"));
+    } catch (serviceError) {
+      console.error("creator_admin_revoke_service_unavailable", { message: serviceError instanceof Error ? serviceError.message : "unknown" });
+    }
+  }
   if (error) {
     console.error("creator_admin_revoke_failed", { code: error.code, message: error.message });
     redirect(`/admin/team?error=${error.code === "42P01" ? "migration" : "save"}`);
